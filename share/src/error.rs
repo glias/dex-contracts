@@ -18,8 +18,7 @@ pub enum Error {
     WrongSUDTInputAmount,
     WrongOrderType,
     OrderPriceNotZero,
-    InputsAndOutputsAmountNotSame = 15,
-    WrongSwapAmount,
+    WrongSwapAmount = 15,
     TypeHashNotSame,
 }
 

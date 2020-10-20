@@ -344,58 +344,10 @@ fn test_ckb_sudt_all_order_capacity_error() {
     let script_cell_index = 1;
     assert_error_eq!(
         err,
-        ScriptError::ValidationFailure(16).input_lock_script(script_cell_index)
-    );
-}
-
-#[test]
-fn test_ckb_sudt_all_order_cell_amount_error() {
-    // input1: sudt_amount(50sudt 0x12A05F200u128) + dealt_amount(50sudt 0x12A05F200u128) + undealt_amount(150sudt 0x37E11D600u128)
-    // + price(5*10^10 0xBA43B7400u64) + buy(00)
-
-    // input2: sudt_amount(500sudt 0xBA43B7400u128) + dealt_amount(100sudt 0x2540BE400u128) + undealt_amount(150sudt 0x37E11D600u128)
-    // + price(5*10^10 0xBA43B7400u64) + sell(01)
-    let inputs_data = vec![
-        Bytes::from(
-            hex::decode("00F2052A01000000000000000000000000F2052A01000000000000000000000000D6117E03000000000000000000000000743BA40B00000000").unwrap(),
-        ),
-        Bytes::from(
-            hex::decode("00743BA40B000000000000000000000000E40B5402000000000000000000000000D6117E03000000000000000000000000743BA40B00000001").unwrap(),
-        ),
-    ];
-
-    // output1: sudt_amount(200sudt 0x4A817C800u128)
-    let outputs_data = vec![Bytes::from(
-        hex::decode("00C817A8040000000000000000000000").unwrap(),
-    )];
-
-    let inputs_args = vec![
-        Bytes::from(hex::decode("7e7a30e75685e4d332f69220e925575dd9b84676").unwrap()),
-        Bytes::from(hex::decode("a53ce751e2adb698ca10f8c1b8ebbee20d41a842").unwrap()),
-    ];
-    let outputs_args = vec![Bytes::from(
-        hex::decode("7e7a30e75685e4d332f69220e925575dd9b84676").unwrap(),
-    )];
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 should not null (this is an error)
-    let (mut context, tx) = build_test_context(
-        vec![200000000000, 80000000000],
-        vec![204775000000],
-        inputs_data,
-        outputs_data,
-        inputs_args,
-        outputs_args,
-    );
-
-    let tx = context.complete_tx(tx);
-
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    let script_cell_index = 0;
-    assert_error_eq!(
-        err,
         ScriptError::ValidationFailure(15).input_lock_script(script_cell_index)
     );
 }
+
 
 #[test]
 // Assume the sudt decimal is 8 and the price 5 sudt/ckb
@@ -503,7 +455,7 @@ fn test_ckb_sudt_all_order_price_not_match() {
     let script_cell_index = 1;
     assert_error_eq!(
         err,
-        ScriptError::ValidationFailure(16).input_lock_script(script_cell_index)
+        ScriptError::ValidationFailure(15).input_lock_script(script_cell_index)
     );
 }
 
@@ -516,7 +468,7 @@ fn test_ckb_sudt_all_order_cell_data_format_error() {
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let inputs_data = vec![
         Bytes::from(
-            hex::decode("0000000000000000000000000000000000000000000000000000000000000000D6117E03000000000000000000000000743BA40B00000000").unwrap(),
+            hex::decode("000000000000000000000000000000000000000000000000000000000000000000D6117E03000000000000000000000000743BA40B00000000").unwrap(),
         ),
         Bytes::from(
             hex::decode("00743BA40B00000000000000000000000000000000000000000000000000000000D6117E03000000000000000000000000743BA40B0000000001").unwrap(),
@@ -553,7 +505,7 @@ fn test_ckb_sudt_all_order_cell_data_format_error() {
 
     // run
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    let script_cell_index = 0;
+    let script_cell_index = 1;
     assert_error_eq!(
         err,
         ScriptError::ValidationFailure(9).input_lock_script(script_cell_index)
