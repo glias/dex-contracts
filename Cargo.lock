@@ -380,16 +380,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ckb-dex-contract"
-version = "0.1.0"
-dependencies = [
- "blake2b-ref",
- "ckb-lib-secp256k1",
- "ckb-std",
- "share",
-]
-
-[[package]]
 name = "ckb-error"
 version = "0.37.0-pre"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2000,6 +1990,16 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "order-book-contract"
+version = "0.1.0"
+dependencies = [
+ "blake2b-ref",
+ "ckb-lib-secp256k1",
+ "ckb-std",
+ "share",
 ]
 
 [[package]]

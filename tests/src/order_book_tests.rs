@@ -83,7 +83,7 @@ fn build_test_context(
 ) -> (Context, TransactionView) {
     // deploy dex script
     let mut context = Context::default();
-    let dex_bin: Bytes = Loader::default().load_binary("order-book");
+    let dex_bin: Bytes = Loader::default().load_binary("order-book-contract");
     let dex_out_point = context.deploy_cell(dex_bin);
 
     // prepare inputs
@@ -569,7 +569,7 @@ fn test_signature_basic() {
 
     // deploy contract
     let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("ckb-dex-contract");
+    let contract_bin: Bytes = Loader::default().load_binary("order-book-contract");
     let out_point = context.deploy_cell(contract_bin);
 
     let secp256k1_bin: Bytes =
@@ -648,7 +648,7 @@ fn test_sign_with_wrong_key() {
 
     // deploy contract
     let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("ckb-dex-contract");
+    let contract_bin: Bytes = Loader::default().load_binary("order-book-contract");
     let out_point = context.deploy_cell(contract_bin);
 
     let secp256k1_bin: Bytes =
@@ -730,7 +730,7 @@ fn test_recover_pubkey() {
 
     // deploy contract
     let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("ckb-dex-contract");
+    let contract_bin: Bytes = Loader::default().load_binary("order-book-contract");
     let out_point = context.deploy_cell(contract_bin);
 
     let secp256k1_bin: Bytes =
@@ -822,7 +822,7 @@ fn test_recover_pubkey_with_wrong_signature() {
 
     // deploy contract
     let mut context = Context::default();
-    let contract_bin: Bytes = Loader::default().load_binary("ckb-dex-contract");
+    let contract_bin: Bytes = Loader::default().load_binary("order-book-contract");
     let out_point = context.deploy_cell(contract_bin);
 
     let secp256k1_bin: Bytes =

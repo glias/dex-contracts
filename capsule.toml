@@ -9,7 +9,7 @@ version = "0.4.1 303dfcb"
 deployment = "deployment.toml"
 
 [[contracts]]
-name = "ckb-dex-contract"
+name = "order-book-contract"
 template_type = "Rust"
 
 [[contracts]]

@@ -1,5 +1,5 @@
 [package]
-name = "ckb-dex-contract"
+name = "order-book-contract"
 version = "0.1.0"
 edition = "2018"
 
