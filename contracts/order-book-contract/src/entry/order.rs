@@ -7,7 +7,6 @@ use core::result::Result;
 use ckb_std::{
   ckb_constants::Source,
   ckb_types::prelude::*,
-  error::SysError,
   high_level::{
     load_cell_capacity, load_cell_data, load_transaction, load_input, load_cell_type_hash
   },
@@ -30,22 +29,9 @@ struct OrderData {
   order_type: u8,
 }
 
-fn _init_order_data() -> OrderData {
-  OrderData {
-    sudt_amount: 0u128,
-    dealt_amount: 0u128,
-    undealt_amount: 0u128,
-    price: 0u64,
-    order_type: 0u8,
-  }
-}
-
-
 fn parse_order_data(data: &[u8]) -> Result<OrderData, Error> {
-  // sudt_amount(u128) or sudt_amount(u128) + dealt(u128) + undealt(u128) + price(u64) + order_type(u8)
-  if data.len() != SUDT_LEN && data.len() != ORDER_LEN {
-    return Err(Error::WrongDataLengthOrFormat);
-  }
+  // sudt_amount(u128) or sudt_amount(u128) + dealt(u128) + undealt(u128) 
+  // + price(u64) + order_type(u8)
   let mut sudt_amount_buf = [0u8; 16];
   let mut dealt_amount_buf = [0u8; 16];
   let mut undealt_amount_buf = [0u8; 16];
@@ -69,11 +55,7 @@ fn parse_order_data(data: &[u8]) -> Result<OrderData, Error> {
 }
 
 fn parse_cell_data(index: usize, source: Source) -> Result<OrderData, Error> {
-  let data = match load_cell_data(index, source) {
-      Ok(data) => data,
-      Err(SysError::IndexOutOfBound) => return Err(Error::IndexOutOfBound),
-      Err(err) => return Err(err.into()),
-  };
+  let data = load_cell_data(index, source)?;
   return match data.len() {
     ORDER_LEN => {
       let mut data_buf = [0u8; ORDER_LEN];
@@ -90,14 +72,8 @@ fn parse_cell_data(index: usize, source: Source) -> Result<OrderData, Error> {
 }
 
 fn validate_order_cells(index: usize) -> Result<(), Error> {
-  let input_type_hash = match load_cell_type_hash(index, Source::Input) {
-    Ok(hash) => hash,
-    Err(err) => return Err(err.into())
-  };
-  let output_type_hash = match load_cell_type_hash(index, Source::Output) {
-    Ok(hash) => hash,
-    Err(err) => return Err(err.into())
-  };
+  let input_type_hash = load_cell_type_hash(index, Source::Input)?;
+  let output_type_hash = load_cell_type_hash(index, Source::Output)?;
   if input_type_hash != output_type_hash {
     return Err(Error::TypeHashNotSame);
   }
@@ -194,15 +170,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
 
 
 pub fn validate() -> Result<(), Error> {
-  let tx = match load_transaction() {
-    Ok(tx) => tx.raw(),
-    Err(err) => return Err(err.into()),
-  };
-
-  let inputs_count = tx.inputs().len();
-  if inputs_count != tx.outputs().len() {
-    return Err(Error::InputsAndOutputsAmountNotSame);
-  }
+  let inputs_count = load_transaction()?.raw().inputs().len();
 
   for group_index in 0..inputs_count {
     match load_input(group_index, Source::GroupInput) {
