@@ -1,0 +1,3 @@
+[submodule "ckb-miscellaneous-scripts"]
+	path = ckb-miscellaneous-scripts
+	url = git@github.com:nervosnetwork/ckb-miscellaneous-scripts.git

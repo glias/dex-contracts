@@ -1,0 +1,43 @@
+name: Build and test
+
+on: [push, pull_request]
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly-2020-09-28
+          override: true
+
+      - uses: docker-practice/actions-setup-docker@master
+        with:
+          docker_channel: nightly
+          # this value please see https://github.com/AkihiroSuda/moby-snapshot/releases
+          docker_nightly_version: snapshot-20201008
+
+      - name: Init submodules
+        uses: srt32/git-actions@v0.0.3
+        with:
+          args: git submodule init && git submodule update -r --init && cd ckb-miscellaneous-scripts && git submodule init && git submodule update
+
+      - name: Build shared binary
+        run: |
+          cd ckb-miscellaneous-scripts
+          sudo chmod -R a+rw ./build
+          make install-tools
+          make all-via-docker
+          cd ..
+      - name: Install Capsule
+        run: |
+          mkdir -p ./capsule && curl -L https://github.com/nervosnetwork/capsule/releases/download/v0.4.1/capsule_v0.4.1_x86_64-linux.tar.gz | tar xvz -C ./capsule --strip-components=1
+          chmod +x ./capsule/capsule
+      - name: Build contracts
+        run: ./capsule/capsule build
+      
+      - name: Test contracts
+        run: ./capsule/capsule test
+  
