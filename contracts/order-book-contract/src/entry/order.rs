@@ -15,7 +15,7 @@ use ckb_std::{
 use share::error::Error;
 
 const FEE: f64 = 0.003;
-const ORDER_LEN: usize = 57;
+const ORDER_LEN: usize = 41;
 const SUDT_LEN: usize = 16;
 // real price * 10 ^ 10 = cell price data
 const PRICE_PARAM: f64 = 10000000000.0;
@@ -23,8 +23,7 @@ const PRECISION_NUMBER: f64 = 0.0001;
 
 struct OrderData {
   sudt_amount: u128,
-  dealt_amount: u128,
-  undealt_amount: u128,
+  order_amount: u128,
   price: u64,
   order_type: u8,
 }
@@ -33,22 +32,19 @@ fn parse_order_data(data: &[u8]) -> Result<OrderData, Error> {
   // sudt_amount(u128) or sudt_amount(u128) + dealt(u128) + undealt(u128) 
   // + price(u64) + order_type(u8)
   let mut sudt_amount_buf = [0u8; 16];
-  let mut dealt_amount_buf = [0u8; 16];
-  let mut undealt_amount_buf = [0u8; 16];
+  let mut order_amount_buf = [0u8; 16];
   let mut price_buf = [0u8; 8];
   let mut order_type_buf = [0u8; 1];
 
   sudt_amount_buf.copy_from_slice(&data[0..16]);
   if data.len() == ORDER_LEN {
-    dealt_amount_buf.copy_from_slice(&data[16..32]);
-    undealt_amount_buf.copy_from_slice(&data[32..48]);
-    price_buf.copy_from_slice(&data[48..56]);
-    order_type_buf.copy_from_slice(&data[56..57]);
+    order_amount_buf.copy_from_slice(&data[16..32]);
+    price_buf.copy_from_slice(&data[32..40]);
+    order_type_buf.copy_from_slice(&data[40..41]);
   }
   Ok(OrderData {
     sudt_amount: u128::from_le_bytes(sudt_amount_buf),
-    dealt_amount: u128::from_le_bytes(dealt_amount_buf),
-    undealt_amount: u128::from_le_bytes(undealt_amount_buf),
+    order_amount: u128::from_le_bytes(order_amount_buf),
     price: u64::from_le_bytes(price_buf),
     order_type: u8::from_le_bytes(order_type_buf),
   })
@@ -82,21 +78,17 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
   let input_order = parse_cell_data(index, Source::Input)?;
   let output_order = parse_cell_data(index, Source::Output)?;
 
-  if input_order.undealt_amount == 0 {
+  if input_order.order_amount == 0 {
     return Err(Error::WrongSUDTInputAmount);
+  }
+  if input_order.order_amount < output_order.order_amount {
+    return Err(Error::WrongSUDTDiffAmount);
   }
   if input_order.price == 0 {
     return Err(Error::OrderPriceNotZero);
   }
-
-  if output_order.dealt_amount != 0 {
-    if input_order.order_type != output_order.order_type {
-      return Err(Error::WrongOrderType);
-    }
-
-    if input_order.dealt_amount > output_order.dealt_amount {
-      return Err(Error::WrongSUDTDiffAmount);
-    }
+  if output_order.order_amount != 0 && input_order.order_type != output_order.order_type {
+    return Err(Error::WrongOrderType);
   }
 
   let order_price: f64 = input_order.price as f64 / PRICE_PARAM;
@@ -106,28 +98,19 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     if input_capacity < output_capacity {
       return Err(Error::WrongDiffCapacity);
     }
-    if input_order.sudt_amount > output_order.sudt_amount || input_order.undealt_amount < output_order.undealt_amount  {
+    if input_order.sudt_amount > output_order.sudt_amount {
       return Err(Error::WrongSUDTDiffAmount);
     }
 
-    let diff_undealt_amount = (input_order.undealt_amount - output_order.undealt_amount) as f64;
-
-    if output_order.dealt_amount != 0 {
-      let diff_dealt_amount = (output_order.dealt_amount - input_order.dealt_amount) as f64;
-
-      if diff_dealt_amount != diff_undealt_amount {
-        return Err(Error::WrongSUDTDiffAmount);
-      }
-    }
-
-    let diff_capacity = (input_capacity - output_capacity) as f64;
     let diff_sudt_amount = (output_order.sudt_amount - input_order.sudt_amount) as f64;
+    let diff_order_amount = (input_order.order_amount - output_order.order_amount) as f64;
+    let diff_capacity = (input_capacity - output_capacity) as f64;
     
-    if diff_sudt_amount != diff_undealt_amount {
+    if diff_sudt_amount != diff_order_amount {
       return Err(Error::WrongSUDTDiffAmount);
     }
 
-    if diff_undealt_amount * (1.0 + FEE) * order_price + PRECISION_NUMBER < diff_capacity {
+    if diff_order_amount * (1.0 + FEE) * order_price + PRECISION_NUMBER < diff_capacity {
       return Err(Error::WrongSwapAmount);
     }
   } else if input_order.order_type == 1 {
@@ -136,25 +119,16 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
       return Err(Error::WrongDiffCapacity);
     }
 
-    if input_order.sudt_amount < output_order.sudt_amount || input_order.undealt_amount < output_order.undealt_amount {
+    if input_order.sudt_amount < output_order.sudt_amount {
       return Err(Error::WrongSUDTDiffAmount);
     }
 
-    let diff_undealt_amount = (input_order.undealt_amount - output_order.undealt_amount) as f64;
-
-    if output_order.dealt_amount != 0 {
-      let diff_dealt_amount = (output_order.dealt_amount - input_order.dealt_amount) as f64;
-
-      if diff_dealt_amount != diff_undealt_amount {
-        return Err(Error::WrongSUDTDiffAmount);
-      }
-    }
-
-    let diff_capacity = (output_capacity - input_capacity) as f64;
     let diff_sudt_amount = (input_order.sudt_amount - output_order.sudt_amount) as f64;
+    let diff_order_amount = (input_order.order_amount - output_order.order_amount) as f64;
+    let diff_capacity = (output_capacity - input_capacity) as f64;
     
     // Floating point numbers have precision errors
-    if diff_sudt_amount - diff_undealt_amount * (1.0 + FEE) > PRECISION_NUMBER {
+    if diff_sudt_amount - diff_order_amount * (1.0 + FEE) > PRECISION_NUMBER {
       return Err(Error::WrongSUDTDiffAmount);
     }
 
