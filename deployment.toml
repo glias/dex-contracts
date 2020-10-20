@@ -1,7 +1,7 @@
 # [[cells]]
-# name = "ckb-dex-contract"
+# name = "order-book-contract"
 # enable_type_id = false
-# location = { file = "build/release/ckb-dex-contract" }
+# location = { file = "build/release/order-book-contract" }
 #
 # # reference to on-chain cells
 # [[cells]]
@@ -14,7 +14,7 @@
 # [[dep_groups]]
 # name = "my_dep_group"
 # cells = [
-#   "ckb-dex-contract",
+#   "order-book-contract",
 #   "genesis_cell"
 # ]
 
