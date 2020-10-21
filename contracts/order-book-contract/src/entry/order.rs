@@ -14,12 +14,10 @@ use ckb_std::{
 
 use share::error::Error;
 
-const FEE: f64 = 0.003;
+const FEE: u128 = 3;  // 0.3%
 const ORDER_LEN: usize = 41;
-
-// real price * 10 ^ 10 = cell price data
-const PRICE_PARAM: f64 = 10000000000.0;
-const PRECISION_NUMBER: f64 = 0.0001;
+const FEE_DECIMAL: u128 = 1000;
+const PRICE_DECIMAL: u128 = 10000000000;  // order_price = real_price * 10^10
 
 struct OrderData {
   sudt_amount: u128,
@@ -87,8 +85,6 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     return Err(Error::WrongOrderType);
   }
 
-  let order_price: f64 = input_order.price as f64 / PRICE_PARAM;
- 
   // Buy SUDT
   if input_order.order_type == 0 {
     if input_capacity < output_capacity {
@@ -98,15 +94,18 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
       return Err(Error::WrongSUDTDiffAmount);
     }
 
-    let diff_sudt_amount = (output_order.sudt_amount - input_order.sudt_amount) as f64;
-    let diff_order_amount = (input_order.order_amount - output_order.order_amount) as f64;
-    let diff_capacity = (input_capacity - output_capacity) as f64;
+    let diff_sudt_amount = output_order.sudt_amount - input_order.sudt_amount;
+    let diff_order_amount = input_order.order_amount - output_order.order_amount;
+    let diff_capacity = (input_capacity - output_capacity) as u128;
     
     if diff_sudt_amount != diff_order_amount {
       return Err(Error::WrongSUDTDiffAmount);
     }
+    
+    let diff_capacity_decimal = diff_capacity * FEE_DECIMAL * PRICE_DECIMAL;
+    let diff_sudt_decimal = diff_sudt_amount * (1000 + FEE) * (input_order.price as u128);
 
-    if diff_order_amount * (1.0 + FEE) * order_price + PRECISION_NUMBER < diff_capacity {
+    if diff_capacity_decimal > diff_sudt_decimal {
       return Err(Error::WrongSwapAmount);
     }
   } else if input_order.order_type == 1 {
@@ -119,16 +118,18 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
       return Err(Error::WrongSUDTDiffAmount);
     }
 
-    let diff_sudt_amount = (input_order.sudt_amount - output_order.sudt_amount) as f64;
-    let diff_order_amount = (input_order.order_amount - output_order.order_amount) as f64;
-    let diff_capacity = (output_capacity - input_capacity) as f64;
+    let diff_sudt_amount = input_order.sudt_amount - output_order.sudt_amount;
+    let diff_order_amount = input_order.order_amount - output_order.order_amount;
+    let diff_capacity = (output_capacity - input_capacity) as u128;
     
     if diff_capacity != diff_order_amount {
       return Err(Error::WrongDiffCapacity);
     }
 
-     // Floating point numbers have precision errors
-    if diff_capacity * (1.0 + FEE) + PRECISION_NUMBER < diff_sudt_amount * order_price {
+    let diff_capacity_decimal = diff_capacity * (1000 + FEE) * PRICE_DECIMAL;
+    let diff_sudt_decimal = diff_sudt_amount * (input_order.price as u128) * FEE_DECIMAL; 
+
+    if diff_capacity_decimal < diff_sudt_decimal {
       return Err(Error::WrongSwapAmount);
     }
   } else {
