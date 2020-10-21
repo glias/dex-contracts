@@ -20,6 +20,7 @@ pub enum Error {
     OrderPriceNotZero,
     WrongSwapAmount = 15,
     TypeHashNotSame,
+    OrderPriceNotSame,
 }
 
 impl From<SysError> for Error {
