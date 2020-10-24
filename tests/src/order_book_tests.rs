@@ -290,7 +290,7 @@ fn test_ckb_sudt_all_order2() {
         ),
     ];
 
-    // output1: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x0u128)
+    // output1: sudt_amount(150sudt 0x37E11D600u128) + order_amount(0sudt 0x0u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
 
     // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(0ckb 0x0u128)
@@ -315,6 +315,59 @@ fn test_ckb_sudt_all_order2() {
     let (mut context, tx) = build_test_context(
         vec![200000000000, 80000000000],
         vec![124775000000, 155000000000],
+        inputs_data,
+        outputs_data,
+        inputs_args,
+        outputs_args,
+        true,
+    );
+
+    let tx = context.complete_tx(tx);
+
+    // run
+    let cycles = context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("pass verification");
+    println!("cycles: {}", cycles);
+}
+
+#[test]
+fn test_ckb_sudt_all_order3() {
+    // input1: sudt_amount(0sudt 0x0u128) + order_amount(50sudt) + price(5*10^10 0xBA43B7400u64) + buy(00)
+
+    // input2: sudt_amount(100sudt) + order_amount(200ckb) + price(5*10^10 0xBA43B7400u64) + sell(01)
+    let inputs_data = vec![
+        Bytes::from(
+            hex::decode("0000000000000000000000000000000000286bee00000000000000000000000000743ba40b00000000").unwrap(),
+        ),
+        Bytes::from(
+            hex::decode("00e40b5402000000000000000000000000c817a804000000000000000000000000743ba40b00000001").unwrap(),
+        ),
+    ];
+
+    // output1: sudt_amount(40sudt) + order_amount(0sudt 0x0u128) + price(5*10^10 0xBA43B7400u64) + buy(00)
+
+    // output2: sudt_amount(59.88sudt) + order_amount(0ckb 0x0u128) + price(5*10^10 0xBA43B7400u64) + sell(01)
+    let outputs_data = vec![
+        Bytes::from(
+            hex::decode("00286bee0000000000000000000000000000000000000000000000000000000000743ba40b00000000").unwrap()),
+        Bytes::from(
+            hex::decode("00a1e9640100000000000000000000000000000000000000000000000000000000743ba40b00000001").unwrap()),
+    ];
+
+    let inputs_args = vec![
+        Bytes::from(hex::decode("7e7a30e75685e4d332f69220e925575dd9b84676").unwrap()),
+        Bytes::from(hex::decode("a53ce751e2adb698ca10f8c1b8ebbee20d41a842").unwrap()),
+    ];
+    let outputs_args = vec![
+        Bytes::from(hex::decode("7e7a30e75685e4d332f69220e925575dd9b84676").unwrap()),
+        Bytes::from(hex::decode("a53ce751e2adb698ca10f8c1b8ebbee20d41a842").unwrap()),
+    ];
+    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
+    // output2 capacity = 800 + 750 = 1550
+    let (mut context, tx) = build_test_context(
+        vec![40000000000, 40000000000],
+        vec![19940000000, 60000000000],
         inputs_data,
         outputs_data,
         inputs_args,
@@ -666,7 +719,8 @@ fn test_signature_basic() {
             .capacity(1000u64.pack())
             .lock(lock_script.clone())
             .build(),
-        Bytes::new(),
+        Bytes::from(
+            hex::decode("C0F87A2308000000000000000000000000BA1DD205000000000000000000000000743BA40B00000001").unwrap())
     );
     let input = CellInput::new_builder()
         .previous_output(input_out_point)
