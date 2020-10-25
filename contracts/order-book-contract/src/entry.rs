@@ -11,7 +11,6 @@ use ckb_std::{
 };
 
 use share::error::Error;
-use share::signature;
 
 mod order;
 
@@ -20,7 +19,7 @@ default_alloc!(4 * 1024, 2048 * 1024, 64);
 
 pub fn main() -> Result<(), Error> {
   return match load_witness_args(0, Source::GroupInput) {
-    Ok(_) => signature::validate(),
+    Ok(_) => Ok(()),
     Err(_) => order::validate(),
   };
 

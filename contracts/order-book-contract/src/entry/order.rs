@@ -90,6 +90,9 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     if input_capacity < output_capacity {
       return Err(Error::WrongDiffCapacity);
     }
+    if output_order.sudt_amount == 0 {
+      return Err(Error::WrongSUDTDiffAmount);
+    }
     if input_order.sudt_amount > output_order.sudt_amount {
       return Err(Error::WrongSUDTDiffAmount);
     }
@@ -112,6 +115,10 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     // Sell SUDT
     if input_capacity > output_capacity {
       return Err(Error::WrongDiffCapacity);
+    }
+
+    if input_order.sudt_amount == 0 {
+      return Err(Error::WrongSUDTInputAmount)
     }
 
     if input_order.sudt_amount < output_order.sudt_amount {
