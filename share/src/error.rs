@@ -22,6 +22,9 @@ pub enum Error {
     TypeHashNotSame,
     OrderPriceNotSame,
     LockHashNotSame,
+    InvalidArgument,
+    NoInputLockHashMatch = 20,
+    WrongMatchInputWitness,
 }
 
 impl From<SysError> for Error {

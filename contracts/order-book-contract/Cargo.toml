@@ -8,5 +8,4 @@ edition = "2018"
 [dependencies]
 ckb-std = "0.6.3"
 ckb-lib-secp256k1 = { path = "../../ckb-lib-secp256k1" }
-blake2b-ref = "0.1"
 share = { path = "../../share" }

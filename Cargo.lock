@@ -1996,7 +1996,6 @@ dependencies = [
 name = "order-book-contract"
 version = "0.1.0"
 dependencies = [
- "blake2b-ref",
  "ckb-lib-secp256k1",
  "ckb-std",
  "share",

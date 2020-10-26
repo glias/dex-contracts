@@ -12,16 +12,11 @@ use ckb_std::{
     high_level::{load_script, load_witness_args},
 };
 
-use blake2b_ref::{Blake2b, Blake2bBuilder};
 use ckb_lib_secp256k1::LibSecp256k1;
 
+use crate::hash::new_blake2b;
 use crate::error::Error;
 
-fn new_blake2b() -> Blake2b {
-    Blake2bBuilder::new(32)
-        .personal(b"ckb-default-hash")
-        .build()
-}
 
 fn test_validate_blake2b_sighash_all(
     lib: &LibSecp256k1,

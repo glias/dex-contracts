@@ -7,4 +7,8 @@ pub mod constants;
 
 pub mod signature;
 
+pub mod hash;
+
 pub mod error;
+
+
