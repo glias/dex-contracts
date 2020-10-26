@@ -21,6 +21,7 @@ pub enum Error {
     WrongSwapAmount = 15,
     TypeHashNotSame,
     OrderPriceNotSame,
+    LockHashNotSame,
 }
 
 impl From<SysError> for Error {
