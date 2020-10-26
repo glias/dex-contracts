@@ -157,10 +157,10 @@ fn test_ckb_sudt_partial_order() {
 
 #[test]
 fn test_ckb_sudt_all_order1() {
-    // input1: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
+    // input0: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
     // + price(5.2*10^10 0xC1B710800u64) + buy(00)
 
-    // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(750ckb 0x1176592E00u128)
+    // input1: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(750ckb 0x1176592E00u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let inputs_data = vec![
         Bytes::from(
@@ -171,10 +171,10 @@ fn test_ckb_sudt_all_order1() {
         ),
     ];
 
-    // output1: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x0u128)
+    // output0: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x0u128)
     // + price(5.2*10^10 0xC1B710800u64) + buy(00)
 
-    // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(0ckb 0x0u128)
+    // output1: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(0ckb 0x0u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let outputs_data = vec![
         Bytes::from(
@@ -214,11 +214,10 @@ fn test_ckb_sudt_all_order1() {
 
 #[test]
 fn test_ckb_sudt_all_order2() {
-    // input1: sudt_amount(0sudt 0x0u128) + order_amount(150sudt 0x37E11D600u128)
-    // + price(5*10^10 0xBA43B7400u64) + buy(00)
-
-    // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(750ckb 0x1176592E00u128)
-    // + price(5*10^10 0xBA43B7400u64) + sell(01)
+    // input0: sudt_amount(0sudt) + order_amount(150sudt) + price(5*10^10) + buy(00)
+    // input1: sudt_amount(500sudt) + order_amount(750ckb) + price(5*10^10) + sell(01)
+    // input2: sudt_amount(0sudt 0x0u128) + order_amount(50sudt) + price(5*10^10) + buy(00)
+    // input3: sudt_amount(100sudt) + order_amount(200ckb) + price(5*10^10) + sell(01)
     let inputs_data = vec![
         Bytes::from(
             hex::decode("0000000000000000000000000000000000D6117E03000000000000000000000000743BA40B00000000").unwrap(),
@@ -226,55 +225,6 @@ fn test_ckb_sudt_all_order2() {
         Bytes::from(
             hex::decode("00743BA40B0000000000000000000000002E597611000000000000000000000000743BA40B00000001").unwrap(),
         ),
-    ];
-
-    // output1: sudt_amount(150sudt 0x37E11D600u128) + order_amount(0sudt 0x0u128)
-    // + price(5*10^10 0xBA43B7400u64) + buy(00)
-
-    // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(0ckb 0x0u128)
-    // + price(5*10^10 0xBA43B7400u64) + sell(01)
-    let outputs_data = vec![
-        Bytes::from(
-            hex::decode("00D6117E0300000000000000000000000000000000000000000000000000000000743BA40B00000000").unwrap()),
-        Bytes::from(
-            hex::decode("C0F87A230800000000000000000000000000000000000000000000000000000000743BA40B00000001").unwrap()),
-    ];
-
-    let inputs_args = vec![
-        Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
-        Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
-    ];
-    let outputs_args = vec![
-        Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
-        Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
-    ];
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 capacity = 800 + 750 = 1550
-    let (mut context, tx) = build_test_context(
-        vec![200000000000, 80000000000],
-        vec![124775000000, 155000000000],
-        inputs_data,
-        outputs_data,
-        inputs_args,
-        outputs_args,
-        true,
-    );
-
-    let tx = context.complete_tx(tx);
-
-    // run
-    let cycles = context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("pass verification");
-    println!("cycles: {}", cycles);
-}
-
-#[test]
-fn test_ckb_sudt_all_order3() {
-    // input1: sudt_amount(0sudt 0x0u128) + order_amount(50sudt) + price(5*10^10 0xBA43B7400u64) + buy(00)
-
-    // input2: sudt_amount(100sudt) + order_amount(200ckb) + price(5*10^10 0xBA43B7400u64) + sell(01)
-    let inputs_data = vec![
         Bytes::from(
             hex::decode("0000000000000000000000000000000000286bee00000000000000000000000000743ba40b00000000").unwrap(),
         ),
@@ -283,10 +233,15 @@ fn test_ckb_sudt_all_order3() {
         ),
     ];
 
-    // output1: sudt_amount(40sudt) + order_amount(0sudt 0x0u128) + price(5*10^10 0xBA43B7400u64) + buy(00)
-
-    // output2: sudt_amount(59.88sudt) + order_amount(0ckb 0x0u128) + price(5*10^10 0xBA43B7400u64) + sell(01)
+    // output0: sudt_amount(150sudt) + order_amount(0sudt) + price(5*10^10) + buy(00)
+    // output1: sudt_amount(349.55sudt) + order_amount(0ckb) + price(5*10^10) + sell(01)
+    // output2: sudt_amount(40sudt) + order_amount(0sudt) + price(5*10^10) + buy(00)
+    // output3: sudt_amount(59.88sudt) + order_amount(0ckb) + price(5*10^10) + sell(01)
     let outputs_data = vec![
+        Bytes::from(
+            hex::decode("00D6117E0300000000000000000000000000000000000000000000000000000000743BA40B00000000").unwrap()),
+        Bytes::from(
+            hex::decode("C0F87A230800000000000000000000000000000000000000000000000000000000743BA40B00000001").unwrap()),
         Bytes::from(
             hex::decode("00286bee0000000000000000000000000000000000000000000000000000000000743ba40b00000000").unwrap()),
         Bytes::from(
@@ -296,16 +251,22 @@ fn test_ckb_sudt_all_order3() {
     let inputs_args = vec![
         Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
         Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
+        Bytes::from(hex::decode("11e5d0105abefa7fcbebf1486dd0a99d5812b793e65cbdb63f4a9b7ab65af719").unwrap()),
+        Bytes::from(hex::decode("8d03e403d1e5c44e0b7fa44e98ec2b3da4c20c06f646119324004eec28f62289").unwrap()),
     ];
     let outputs_args = vec![
         Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
         Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
+        Bytes::from(hex::decode("11e5d0105abefa7fcbebf1486dd0a99d5812b793e65cbdb63f4a9b7ab65af719").unwrap()),
+        Bytes::from(hex::decode("8d03e403d1e5c44e0b7fa44e98ec2b3da4c20c06f646119324004eec28f62289").unwrap()),
     ];
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 capacity = 800 + 750 = 1550
+    // output0 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
+    // output1 capacity = 800 + 750 = 1550
+    // output2 capacity = 400 - 200 * (1 + 0.003) = 199.4
+    // output3 capacity = 400 + 200 = 600
     let (mut context, tx) = build_test_context(
-        vec![40000000000, 40000000000],
-        vec![19940000000, 60000000000],
+        vec![200000000000, 80000000000, 40000000000, 40000000000],
+        vec![124775000000, 155000000000, 19940000000, 60000000000],
         inputs_data,
         outputs_data,
         inputs_args,
@@ -324,10 +285,10 @@ fn test_ckb_sudt_all_order3() {
 
 #[test]
 fn test_ckb_sudt_all_order_capacity_error() {
-    // input1: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
+    // input0: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
 
-    // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(750ckb 0x1176592E00u128)
+    // input1: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(750ckb 0x1176592E00u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let inputs_data = vec![
         Bytes::from(
@@ -338,10 +299,10 @@ fn test_ckb_sudt_all_order_capacity_error() {
         ),
     ];
 
-    // output1: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x0u128)
+    // output0: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x0u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
 
-    // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(0ckb 0x0u128)
+    // output1: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(0ckb 0x0u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let outputs_data = vec![
         Bytes::from(
@@ -358,8 +319,8 @@ fn test_ckb_sudt_all_order_capacity_error() {
         Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
         Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
     ];
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 capacity = 800 + 740 = 1540 not 1530 (output2 capacity amount is error)
+    // output0 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
+    // output1 capacity = 800 + 740 = 1540 not 1530 (output2 capacity amount is error)
     let (mut context, tx) = build_test_context(
         vec![200000000000, 80000000000],
         vec![124775000000, 153000000000],
@@ -383,10 +344,10 @@ fn test_ckb_sudt_all_order_capacity_error() {
 
 #[test]
 fn test_ckb_sudt_order_type_error() {
-    // input1: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
+    // input0: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
 
-    // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
+    // input1: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let inputs_data = vec![
         Bytes::from(
@@ -397,9 +358,10 @@ fn test_ckb_sudt_order_type_error() {
         ),
     ];
 
-    // output1: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x12A05F200u128)
+    // output0: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x12A05F200u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
-    // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
+
+    // output1: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00) (order type error)
     let outputs_data = vec![
         Bytes::from(
@@ -417,8 +379,8 @@ fn test_ckb_sudt_order_type_error() {
         Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
         Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
     ];
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 capacity = 800 + 750 = 1550
+    // output0 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
+    // output1 capacity = 800 + 750 = 1550
     let (mut context, tx) = build_test_context(
         vec![200000000000, 80000000000],
         vec![124775000000, 155000000000],
@@ -442,10 +404,10 @@ fn test_ckb_sudt_order_type_error() {
 
 #[test]
 fn test_ckb_sudt_all_order_price_not_match() {
-    // input1: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
+    // input0: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
 
-    // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
+    // input1: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
     // + price(6*10^10 0xDF8475800u64) + sell(01)
     let inputs_data = vec![
         Bytes::from(
@@ -456,9 +418,10 @@ fn test_ckb_sudt_all_order_price_not_match() {
         ),
     ];
 
-    // output1: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x12A05F200u128)
+    // output0: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x12A05F200u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
-    // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
+
+    // output1: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let outputs_data = vec![
         Bytes::from(
@@ -476,8 +439,8 @@ fn test_ckb_sudt_all_order_price_not_match() {
         Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
         Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
     ];
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 capacity = 800 + 750 = 1550
+    // output0 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
+    // output1 capacity = 800 + 750 = 1550
     let (mut context, tx) = build_test_context(
         vec![200000000000, 80000000000],
         vec![124775000000, 155000000000],
@@ -501,10 +464,10 @@ fn test_ckb_sudt_all_order_price_not_match() {
 
 #[test]
 fn test_ckb_sudt_all_order_cell_data_format_error() {
-    // input1: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
+    // input0: sudt_amount(50sudt 0x12A05F200u128) + order_amount(150sudt 0x37E11D600u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
 
-    // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
+    // input1: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let inputs_data = vec![
         Bytes::from(
@@ -515,9 +478,10 @@ fn test_ckb_sudt_all_order_cell_data_format_error() {
         ),
     ];
 
-    // output1: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x12A05F200u128)
+    // output0: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x12A05F200u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
-    // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
+
+    // output1: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
     let outputs_data = vec![
         Bytes::from(
@@ -535,8 +499,8 @@ fn test_ckb_sudt_all_order_cell_data_format_error() {
         Bytes::from(hex::decode("6fe3733cd9df22d05b8a70f7b505d0fb67fb58fb88693217135ff5079713e902").unwrap()),
         Bytes::from(hex::decode("a1b0cb1a3e2c49ff91bfc884a2cb428bae8cac5eea8152629612673cef9d1940").unwrap()),
     ];
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 capacity = 800 + 750 = 1550
+    // output0 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
+    // output1 capacity = 800 + 750 = 1550
     let (mut context, tx) = build_test_context(
         vec![200000000000, 80000000000],
         vec![124775000000, 155000000000],
