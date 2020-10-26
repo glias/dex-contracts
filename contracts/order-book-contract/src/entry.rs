@@ -4,11 +4,11 @@ use ckb_std::{
   default_alloc,
   ckb_constants::Source,
   ckb_types::{bytes::Bytes, prelude::*},
-  high_level::{load_script, load_input, load_witness_args, QueryIter},
+  high_level::{load_script, load_cell, load_witness_args, QueryIter},
 };
 
 use share::error::Error;
-use share::hash::calc_blake2b_hash;
+use share::hash::blake2b_256;
 
 mod order;
 
@@ -23,8 +23,8 @@ pub fn main() -> Result<(), Error> {
     return Err(Error::InvalidArgument);
   }
 
-  let input_position = QueryIter::new(load_input, Source::Input)
-        .position(|input| &calc_blake2b_hash(input.as_slice())[..] == args.clone().pack().as_slice());
+  let input_position = QueryIter::new(load_cell, Source::Input)
+        .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &args[..]);
 
   match input_position {
     None => return order::validate(),
