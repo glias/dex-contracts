@@ -125,6 +125,10 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
       return Err(Error::WrongSUDTInputAmount)
     }
 
+    if input_order.sudt_amount <= input_order.order_amount {
+      return Err(Error::WrongSUDTInputAmount)
+    }
+
     if input_order.sudt_amount < output_order.sudt_amount {
       return Err(Error::WrongSUDTDiffAmount);
     }
