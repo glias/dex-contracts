@@ -1,16 +1,14 @@
-// Import from `core` instead of from `std` since we are in no-std mode
 use core::result::Result;
 
-// Import heap related library from `alloc`
-// Import CKB syscalls and structures
-// https://nervosnetwork.github.io/ckb-std/riscv64imac-unknown-none-elf/doc/ckb_std/index.html
 use ckb_std::{
   default_alloc,
   ckb_constants::Source,
-  high_level::load_witness_args,
+  ckb_types::{bytes::Bytes, prelude::*},
+  high_level::{load_script, load_cell, load_witness_args, QueryIter},
 };
 
 use share::error::Error;
+use share::hash::blake2b_256;
 
 mod order;
 
@@ -18,9 +16,24 @@ mod order;
 default_alloc!(4 * 1024, 2048 * 1024, 64);
 
 pub fn main() -> Result<(), Error> {
-  return match load_witness_args(0, Source::GroupInput) {
-    Ok(_) => Ok(()),
-    Err(_) => order::validate(),
-  };
+  let script = load_script()?;
+  let args: Bytes = script.args().unpack();
+
+  if args.len() != 32 {
+    return Err(Error::InvalidArgument);
+  }
+
+  let input_position = QueryIter::new(load_cell, Source::Input)
+        .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &args[..]);
+
+  match input_position {
+    None => return order::validate(),
+    Some(position) => {
+      match load_witness_args(position, Source::Input) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(Error::WrongMatchInputWitness)
+      }
+    }
+  }
 
 }
