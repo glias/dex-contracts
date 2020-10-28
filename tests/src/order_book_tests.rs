@@ -46,12 +46,6 @@ fn sign_tx(tx: TransactionView, key: &Privkey) -> TransactionView {
     let witness_len = witness_for_digest.as_bytes().len() as u64;
     blake2b.update(&witness_len.to_le_bytes());
     blake2b.update(&witness_for_digest.as_bytes());
-    // (1..witnesses_len).for_each(|n| {
-    //     let witness = tx.witnesses().get(n).unwrap();
-    //     let witness_len = witness.raw_data().len() as u64;
-    //     blake2b.update(&witness_len.to_le_bytes());
-    //     blake2b.update(&witness.raw_data());
-    // });
     blake2b.finalize(&mut message);
     let message = H256::from(message);
     let sig = key.sign_recoverable(&message).expect("sign");
