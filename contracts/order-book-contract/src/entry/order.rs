@@ -11,11 +11,16 @@ use ckb_std::{
 
 use share::error::Error;
 
-const FEE: u128 = 3;  // 0.3%
-const ORDER_LEN: usize = 41;
+// The dex fee rate is fixed at 0.3%
+const FEE: u128 = 3;  
 const FEE_DECIMAL: u128 = 1000;
-const PRICE_DECIMAL: u128 = 10000000000;  // order_price = real_price * 10^10
 
+// The cell data length of order book is fixed at 41 bytes
+const ORDER_LEN: usize = 41;
+// order_price = real_price * 10^10
+const PRICE_DECIMAL: u128 = 10000000000;  
+
+ // order cell data: sudt_amount(u128) + order_amount(u128) + price(u64) + order_type(u8)
 struct OrderData {
   sudt_amount: u128,
   order_amount: u128,
@@ -23,7 +28,6 @@ struct OrderData {
   order_type: u8,
 }
 
- // order cell data: sudt_amount(u128) + order_amount(u128) + price(u64) + order_type(u8)
 fn parse_cell_data(index: usize, source: Source) -> Result<OrderData, Error> {
   let data = load_cell_data(index, source)?;
   return match data.len() {
