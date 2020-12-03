@@ -10,5 +10,3 @@ pub mod signature;
 pub mod hash;
 
 pub mod error;
-
-pub mod generated;

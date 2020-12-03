@@ -1,5 +1,5 @@
 schema:
-	make -C share schema
+	make -C tests schema
 
 fmt:
 	cd contracts/toCKB-typescript && cargo fmt --all

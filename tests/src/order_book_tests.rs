@@ -12,14 +12,8 @@ use ckb_tool::ckb_types::{
     prelude::*,
     H256,
 };
+use generated::cell_data::OrderBookCellDataMol;
 use molecule::prelude::*;
-use order::{self, Order};
-
-impl Pack<order::Uint128> for u128 {
-    fn pack(&self) -> order::Uint128 {
-        order::Uint128::new_unchecked(Bytes::from(self.to_le_bytes().to_vec()))
-    }
-}
 
 const MAX_CYCLES: u64 = 10000_0000;
 
@@ -168,7 +162,7 @@ fn test_ckb_sudt_partial_order() {
     // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
 
-    let input_1 = Order::new_builder()
+    let input_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(150_000_000_000.pack())
         .price(50_000_000_000.pack())
@@ -176,7 +170,7 @@ fn test_ckb_sudt_partial_order() {
         .build()
         .as_bytes();
 
-    let input_2 = Order::new_builder()
+    let input_2 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(100_000_000_000.pack())
         .price(50_000_000_000.pack())
@@ -190,7 +184,7 @@ fn test_ckb_sudt_partial_order() {
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
     // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
-    let output_1 = Order::new_builder()
+    let output_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(200_000_000_000.pack())
         .order_amount(0.pack())
         .price(50_000_000_000.pack())
@@ -198,7 +192,7 @@ fn test_ckb_sudt_partial_order() {
         .build()
         .as_bytes();
 
-    let output_2 = Order::new_builder()
+    let output_2 = OrderBookCellDataMol::new_builder()
         .sudt_amount(34_955_000_000.pack())
         .order_amount(25_000_000_000.pack())
         .price(50_000_000_000.pack())
