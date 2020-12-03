@@ -9,3 +9,5 @@ edition = "2018"
 ckb-std = "0.6.3"
 ckb-lib-secp256k1 = { path = "../../ckb-lib-secp256k1" }
 share = { path = "../../share" }
+num-bigint = { version = "0.3", default-features = false }
+num-traits = { version = "0.2", default-features = false }

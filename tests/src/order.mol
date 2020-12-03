@@ -1,0 +1,8 @@
+array Uint128 [byte; 16];
+
+struct Order {
+    sudt_amount:    Uint128,
+    order_amount:   Uint128,
+    price:          Uint128,
+    order_type:     byte,
+}
