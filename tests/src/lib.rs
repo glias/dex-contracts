@@ -4,6 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+mod order;
 #[cfg(test)]
 mod order_book_tests;
 

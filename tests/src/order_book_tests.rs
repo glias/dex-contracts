@@ -12,6 +12,14 @@ use ckb_tool::ckb_types::{
     prelude::*,
     H256,
 };
+use molecule::prelude::*;
+use order::{self, Order};
+
+impl Pack<order::Uint128> for u128 {
+    fn pack(&self) -> order::Uint128 {
+        order::Uint128::new_unchecked(Bytes::from(self.to_le_bytes().to_vec()))
+    }
+}
 
 const MAX_CYCLES: u64 = 10000_0000;
 
