@@ -22,8 +22,8 @@ const FEE_DECIMAL: u128 = 1000;
 
 // The cell data length of order book is fixed at 41 bytes
 const ORDER_LEN: usize = 49;
-// order_price = real_price * 10^10
-const PRICE_DECIMAL: u128 = 10000000000;
+// order_price = real_price * 10^20
+const PRICE_DECIMAL: u128 = 100_000_000_000_000_000_000;
 
 #[derive(Debug)]
 // order cell data: sudt_amount(u128) + order_amount(u128) + price(u64) + order_type(u8)
