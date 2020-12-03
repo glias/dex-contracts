@@ -2,7 +2,9 @@
 members = [
     "tests",
     "contracts/order-book-contract",
-    "contracts/liquidity-poll-contract",
+    "contracts/liquidity-lock-script",
+    "contracts/info-type-script",
+    "contracts/info-lock-script",
     "share"
 ]
 

@@ -1602,6 +1602,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "info-lock-script"
+version = "0.1.0"
+dependencies = [
+ "share",
+]
+
+[[package]]
+name = "info-type-script"
+version = "0.1.0"
+dependencies = [
+ "share",
+]
+
+[[package]]
 name = "iovec"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1682,12 +1696,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "liquidity-poll-contract"
+name = "liquidity-lock-script"
 version = "0.1.0"
 dependencies = [
- "blake2b-ref",
- "ckb-lib-secp256k1",
- "ckb-std",
  "share",
 ]
 
@@ -2015,7 +2026,6 @@ name = "order-book-contract"
 version = "0.1.0"
 dependencies = [
  "ckb-lib-secp256k1",
- "ckb-std",
  "num-bigint",
  "num-traits",
  "share",

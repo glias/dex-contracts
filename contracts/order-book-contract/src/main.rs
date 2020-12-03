@@ -12,6 +12,8 @@
 
 mod entry;
 
+use share::ckb_std;
+
 ckb_std::entry!(program_entry);
 
 /// program entry

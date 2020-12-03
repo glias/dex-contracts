@@ -13,10 +13,10 @@
 // define modules
 mod entry;
 
-use ckb_std::default_alloc;
+use share::ckb_std;
+use share::ckb_std::default_alloc;
 
 ckb_std::entry!(program_entry);
-default_alloc!();
 
 /// program entry
 fn program_entry() -> i8 {

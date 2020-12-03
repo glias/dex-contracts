@@ -2,6 +2,7 @@ use ckb_std::error::SysError;
 
 /// Error
 #[repr(i8)]
+#[derive(Debug)]
 pub enum Error {
     IndexOutOfBound = 1,
     ItemMissing,
@@ -25,6 +26,34 @@ pub enum Error {
     InvalidArgument,
     NoInputLockHashMatch = 20,
     WrongMatchInputWitness,
+    InvalidLiquidityDataLen,
+    InvalidLiquidityData,
+    InvalidEncodeNumber,
+    LiquiditySUDTTypeHashMismatch = 25,
+    PackingMixin,
+    InvalidOrderKind,
+    InvalidTypeID,
+    InvalidCodeHash,
+    InvalidTypeHash = 30,
+    OnlyOneLiquidityPool,
+    InvalidCount,
+    ImpossibleAction,
+    LiquidityAction,
+    InvalidFee = 35,
+    InvalidData,
+    InputCellError,
+    OutputCellError,
+    PoolNotFound,
+    MissingTypeScript = 40,
+    SellCkbFailed,
+    BuyCkbFailed,
+    AddLiquidityFailed,
+    RemoveLiquidityFailed,
+    AddOverflow,
+    SubOverflow,
+    MultiplOverflow,
+    DivideOverflow,
+    NoInfoCell,
 }
 
 impl From<SysError> for Error {

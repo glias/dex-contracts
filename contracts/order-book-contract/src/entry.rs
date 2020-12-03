@@ -20,7 +20,7 @@
 
 use core::result::Result;
 
-use ckb_std::{
+use share::ckb_std::{
     ckb_constants::Source,
     ckb_types::{bytes::Bytes, prelude::*},
     default_alloc,
