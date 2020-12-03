@@ -7,6 +7,7 @@ use num_traits::Zero;
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
+    debug,
     high_level::{
         load_cell_capacity, load_cell_data, load_cell_lock_hash, load_cell_type_hash, load_input,
         QueryIter,
@@ -24,12 +25,13 @@ const ORDER_LEN: usize = 49;
 // order_price = real_price * 10^10
 const PRICE_DECIMAL: u128 = 10000000000;
 
+#[derive(Debug)]
 // order cell data: sudt_amount(u128) + order_amount(u128) + price(u64) + order_type(u8)
 struct OrderData {
-    sudt_amount: u128,
+    sudt_amount:  u128,
     order_amount: u128,
-    price: BigUint,
-    order_type: u8,
+    price:        BigUint,
+    order_type:   u8,
 }
 
 fn parse_cell_data(index: usize, source: Source) -> Result<OrderData, Error> {
@@ -50,10 +52,10 @@ fn parse_cell_data(index: usize, source: Source) -> Result<OrderData, Error> {
             order_type_buf.copy_from_slice(&data_buf[48..49]);
 
             Ok(OrderData {
-                sudt_amount: u128::from_le_bytes(sudt_amount_buf),
+                sudt_amount:  u128::from_le_bytes(sudt_amount_buf),
                 order_amount: u128::from_le_bytes(order_amount_buf),
-                price: BigUint::from_bytes_le(&price_buf),
-                order_type: u8::from_le_bytes(order_type_buf),
+                price:        BigUint::from_bytes_le(&price_buf),
+                order_type:   u8::from_le_bytes(order_type_buf),
             })
         }
         _ => Err(Error::WrongDataLengthOrFormat),
@@ -80,6 +82,13 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     let input_order = parse_cell_data(index, Source::Input)?;
     let output_order = parse_cell_data(index, Source::Output)?;
 
+    debug!(
+        "input capacity {}, output capacity {},",
+        input_capacity, output_capacity
+    );
+    debug!("input order {:?}", input_order);
+    debug!("output order {:?}", output_order);
+
     if input_order.order_amount == 0 {
         return Err(Error::WrongSUDTInputAmount);
     }
@@ -97,6 +106,8 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     if input_order.order_type != output_order.order_type {
         return Err(Error::WrongOrderType);
     }
+
+    debug!("order type {}", input_order.order_type);
 
     // Buy SUDT
     if input_order.order_type == 0 {
@@ -169,6 +180,8 @@ pub fn validate() -> Result<(), Error> {
     // Find the position of the order book input in the entire inputs to find the output
     // corresponding to the position, and then verify the order data of the input and output
     for index in 0..inputs.len() {
+        debug!("index {}", index);
+
         let input = inputs.get(index).unwrap();
         if order_inputs
             .iter()

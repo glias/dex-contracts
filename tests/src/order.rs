@@ -31,85 +31,111 @@ impl ::core::default::Default for Uint128 {
     }
 }
 impl Uint128 {
-    pub const TOTAL_SIZE: usize = 16;
-    pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 16;
+    pub const ITEM_SIZE: usize = 1;
+    pub const TOTAL_SIZE: usize = 16;
+
     pub fn nth0(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(0..1))
     }
+
     pub fn nth1(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(1..2))
     }
+
     pub fn nth2(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(2..3))
     }
+
     pub fn nth3(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(3..4))
     }
+
     pub fn nth4(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(4..5))
     }
+
     pub fn nth5(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(5..6))
     }
+
     pub fn nth6(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(6..7))
     }
+
     pub fn nth7(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(7..8))
     }
+
     pub fn nth8(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(8..9))
     }
+
     pub fn nth9(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(9..10))
     }
+
     pub fn nth10(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(10..11))
     }
+
     pub fn nth11(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(11..12))
     }
+
     pub fn nth12(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(12..13))
     }
+
     pub fn nth13(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(13..14))
     }
+
     pub fn nth14(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(14..15))
     }
+
     pub fn nth15(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(15..16))
     }
+
     pub fn raw_data(&self) -> molecule::bytes::Bytes {
         self.as_bytes()
     }
+
     pub fn as_reader<'r>(&'r self) -> Uint128Reader<'r> {
         Uint128Reader::new_unchecked(self.as_slice())
     }
 }
 impl molecule::prelude::Entity for Uint128 {
     type Builder = Uint128Builder;
+
     const NAME: &'static str = "Uint128";
+
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
         Uint128(data)
     }
+
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
     }
+
     fn as_slice(&self) -> &[u8] {
         &self.0[..]
     }
+
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
         Uint128Reader::from_slice(slice).map(|reader| reader.to_entity())
     }
+
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
         Uint128Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
+
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
     }
+
     fn as_builder(self) -> Self::Builder {
         Self::new_builder().set([
             self.nth0(),
@@ -155,73 +181,95 @@ impl<'r> ::core::fmt::Display for Uint128Reader<'r> {
     }
 }
 impl<'r> Uint128Reader<'r> {
-    pub const TOTAL_SIZE: usize = 16;
-    pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 16;
+    pub const ITEM_SIZE: usize = 1;
+    pub const TOTAL_SIZE: usize = 16;
+
     pub fn nth0(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[0..1])
     }
+
     pub fn nth1(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[1..2])
     }
+
     pub fn nth2(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[2..3])
     }
+
     pub fn nth3(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[3..4])
     }
+
     pub fn nth4(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[4..5])
     }
+
     pub fn nth5(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[5..6])
     }
+
     pub fn nth6(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[6..7])
     }
+
     pub fn nth7(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[7..8])
     }
+
     pub fn nth8(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[8..9])
     }
+
     pub fn nth9(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[9..10])
     }
+
     pub fn nth10(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[10..11])
     }
+
     pub fn nth11(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[11..12])
     }
+
     pub fn nth12(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[12..13])
     }
+
     pub fn nth13(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[13..14])
     }
+
     pub fn nth14(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[14..15])
     }
+
     pub fn nth15(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[15..16])
     }
+
     pub fn raw_data(&self) -> &'r [u8] {
         self.as_slice()
     }
 }
 impl<'r> molecule::prelude::Reader<'r> for Uint128Reader<'r> {
     type Entity = Uint128;
+
     const NAME: &'static str = "Uint128Reader";
+
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
+
     fn new_unchecked(slice: &'r [u8]) -> Self {
         Uint128Reader(slice)
     }
+
     fn as_slice(&self) -> &'r [u8] {
         self.0
     }
+
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
@@ -260,73 +308,90 @@ impl ::core::default::Default for Uint128Builder {
     }
 }
 impl Uint128Builder {
-    pub const TOTAL_SIZE: usize = 16;
-    pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 16;
+    pub const ITEM_SIZE: usize = 1;
+    pub const TOTAL_SIZE: usize = 16;
+
     pub fn set(mut self, v: [Byte; 16]) -> Self {
         self.0 = v;
         self
     }
+
     pub fn nth0(mut self, v: Byte) -> Self {
         self.0[0] = v;
         self
     }
+
     pub fn nth1(mut self, v: Byte) -> Self {
         self.0[1] = v;
         self
     }
+
     pub fn nth2(mut self, v: Byte) -> Self {
         self.0[2] = v;
         self
     }
+
     pub fn nth3(mut self, v: Byte) -> Self {
         self.0[3] = v;
         self
     }
+
     pub fn nth4(mut self, v: Byte) -> Self {
         self.0[4] = v;
         self
     }
+
     pub fn nth5(mut self, v: Byte) -> Self {
         self.0[5] = v;
         self
     }
+
     pub fn nth6(mut self, v: Byte) -> Self {
         self.0[6] = v;
         self
     }
+
     pub fn nth7(mut self, v: Byte) -> Self {
         self.0[7] = v;
         self
     }
+
     pub fn nth8(mut self, v: Byte) -> Self {
         self.0[8] = v;
         self
     }
+
     pub fn nth9(mut self, v: Byte) -> Self {
         self.0[9] = v;
         self
     }
+
     pub fn nth10(mut self, v: Byte) -> Self {
         self.0[10] = v;
         self
     }
+
     pub fn nth11(mut self, v: Byte) -> Self {
         self.0[11] = v;
         self
     }
+
     pub fn nth12(mut self, v: Byte) -> Self {
         self.0[12] = v;
         self
     }
+
     pub fn nth13(mut self, v: Byte) -> Self {
         self.0[13] = v;
         self
     }
+
     pub fn nth14(mut self, v: Byte) -> Self {
         self.0[14] = v;
         self
     }
+
     pub fn nth15(mut self, v: Byte) -> Self {
         self.0[15] = v;
         self
@@ -334,10 +399,13 @@ impl Uint128Builder {
 }
 impl molecule::prelude::Builder for Uint128Builder {
     type Entity = Uint128;
+
     const NAME: &'static str = "Uint128Builder";
+
     fn expected_length(&self) -> usize {
         Self::TOTAL_SIZE
     }
+
     fn write<W: ::molecule::io::Write>(&self, writer: &mut W) -> ::molecule::io::Result<()> {
         writer.write_all(self.0[0].as_slice())?;
         writer.write_all(self.0[1].as_slice())?;
@@ -357,6 +425,7 @@ impl molecule::prelude::Builder for Uint128Builder {
         writer.write_all(self.0[15].as_slice())?;
         Ok(())
     }
+
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
@@ -400,46 +469,59 @@ impl ::core::default::Default for Order {
     }
 }
 impl Order {
-    pub const TOTAL_SIZE: usize = 49;
-    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
     pub const FIELD_COUNT: usize = 4;
+    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
+    pub const TOTAL_SIZE: usize = 49;
+
     pub fn sudt_amount(&self) -> Uint128 {
         Uint128::new_unchecked(self.0.slice(0..16))
     }
+
     pub fn order_amount(&self) -> Uint128 {
         Uint128::new_unchecked(self.0.slice(16..32))
     }
+
     pub fn price(&self) -> Uint128 {
         Uint128::new_unchecked(self.0.slice(32..48))
     }
+
     pub fn order_type(&self) -> Byte {
         Byte::new_unchecked(self.0.slice(48..49))
     }
+
     pub fn as_reader<'r>(&'r self) -> OrderReader<'r> {
         OrderReader::new_unchecked(self.as_slice())
     }
 }
 impl molecule::prelude::Entity for Order {
     type Builder = OrderBuilder;
+
     const NAME: &'static str = "Order";
+
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
         Order(data)
     }
+
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
     }
+
     fn as_slice(&self) -> &[u8] {
         &self.0[..]
     }
+
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
         OrderReader::from_slice(slice).map(|reader| reader.to_entity())
     }
+
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
         OrderReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
+
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
     }
+
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
             .sudt_amount(self.sudt_amount())
@@ -475,34 +557,43 @@ impl<'r> ::core::fmt::Display for OrderReader<'r> {
     }
 }
 impl<'r> OrderReader<'r> {
-    pub const TOTAL_SIZE: usize = 49;
-    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
     pub const FIELD_COUNT: usize = 4;
+    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
+    pub const TOTAL_SIZE: usize = 49;
+
     pub fn sudt_amount(&self) -> Uint128Reader<'r> {
         Uint128Reader::new_unchecked(&self.as_slice()[0..16])
     }
+
     pub fn order_amount(&self) -> Uint128Reader<'r> {
         Uint128Reader::new_unchecked(&self.as_slice()[16..32])
     }
+
     pub fn price(&self) -> Uint128Reader<'r> {
         Uint128Reader::new_unchecked(&self.as_slice()[32..48])
     }
+
     pub fn order_type(&self) -> ByteReader<'r> {
         ByteReader::new_unchecked(&self.as_slice()[48..49])
     }
 }
 impl<'r> molecule::prelude::Reader<'r> for OrderReader<'r> {
     type Entity = Order;
+
     const NAME: &'static str = "OrderReader";
+
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
+
     fn new_unchecked(slice: &'r [u8]) -> Self {
         OrderReader(slice)
     }
+
     fn as_slice(&self) -> &'r [u8] {
         self.0
     }
+
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
@@ -514,27 +605,31 @@ impl<'r> molecule::prelude::Reader<'r> for OrderReader<'r> {
 }
 #[derive(Debug, Default)]
 pub struct OrderBuilder {
-    pub(crate) sudt_amount: Uint128,
+    pub(crate) sudt_amount:  Uint128,
     pub(crate) order_amount: Uint128,
-    pub(crate) price: Uint128,
-    pub(crate) order_type: Byte,
+    pub(crate) price:        Uint128,
+    pub(crate) order_type:   Byte,
 }
 impl OrderBuilder {
-    pub const TOTAL_SIZE: usize = 49;
-    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
     pub const FIELD_COUNT: usize = 4;
+    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
+    pub const TOTAL_SIZE: usize = 49;
+
     pub fn sudt_amount(mut self, v: Uint128) -> Self {
         self.sudt_amount = v;
         self
     }
+
     pub fn order_amount(mut self, v: Uint128) -> Self {
         self.order_amount = v;
         self
     }
+
     pub fn price(mut self, v: Uint128) -> Self {
         self.price = v;
         self
     }
+
     pub fn order_type(mut self, v: Byte) -> Self {
         self.order_type = v;
         self
@@ -542,10 +637,13 @@ impl OrderBuilder {
 }
 impl molecule::prelude::Builder for OrderBuilder {
     type Entity = Order;
+
     const NAME: &'static str = "OrderBuilder";
+
     fn expected_length(&self) -> usize {
         Self::TOTAL_SIZE
     }
+
     fn write<W: ::molecule::io::Write>(&self, writer: &mut W) -> ::molecule::io::Result<()> {
         writer.write_all(self.sudt_amount.as_slice())?;
         writer.write_all(self.order_amount.as_slice())?;
@@ -553,6 +651,7 @@ impl molecule::prelude::Builder for OrderBuilder {
         writer.write_all(self.order_type.as_slice())?;
         Ok(())
     }
+
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)

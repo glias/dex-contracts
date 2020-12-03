@@ -9,3 +9,4 @@ edition = "2018"
 ckb-std = "0.6.0"
 ckb-lib-secp256k1 = { path = "../ckb-lib-secp256k1" }
 blake2b-ref = "0.1"
+molecule = { version = "0.6", default-features = false }

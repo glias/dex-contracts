@@ -1,6 +1,6 @@
-array Uint128 [byte; 16];
+import basic;
 
-struct Order {
+struct OrderBookCellDataMol {
     sudt_amount:    Uint128,
     order_amount:   Uint128,
     price:          Uint128,

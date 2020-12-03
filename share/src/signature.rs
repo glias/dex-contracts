@@ -14,9 +14,8 @@ use ckb_std::{
 
 use ckb_lib_secp256k1::LibSecp256k1;
 
-use crate::hash::new_blake2b;
 use crate::error::Error;
-
+use crate::hash::new_blake2b;
 
 fn test_validate_blake2b_sighash_all(
     lib: &LibSecp256k1,

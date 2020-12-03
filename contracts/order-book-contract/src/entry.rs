@@ -21,10 +21,10 @@
 use core::result::Result;
 
 use ckb_std::{
-  ckb_constants::Source,
-  ckb_types::{bytes::Bytes, prelude::*},
-  default_alloc,
-  high_level::{load_cell, load_script, load_witness_args, QueryIter},
+    ckb_constants::Source,
+    ckb_types::{bytes::Bytes, prelude::*},
+    default_alloc,
+    high_level::{load_cell, load_script, load_witness_args, QueryIter},
 };
 
 use share::error::Error;
@@ -36,27 +36,28 @@ mod order;
 default_alloc!(4 * 1024, 2048 * 1024, 64);
 
 pub fn main() -> Result<(), Error> {
-  let script = load_script()?;
-  let args: Bytes = script.args().unpack();
+    let script = load_script()?;
+    let args: Bytes = script.args().unpack();
 
-  // The length of args(lock hash) must be 32 bytes
-  if args.len() != 32 {
-    return Err(Error::InvalidArgument);
-  }
+    // The length of args(lock hash) must be 32 bytes
+    if args.len() != 32 {
+        return Err(Error::InvalidArgument);
+    }
 
-  // Check if there is an input with lock hash equal to order book cell lock args in Inputs.
-  // If it exists, verify it according to the process of withdrawal or withdrawal,
-  // if it does not exist, verify it according to the process of matching transaction.
-  let input_position = QueryIter::new(load_cell, Source::Input)
-    .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &args[..]);
+    // Check if there is an input with lock hash equal to order book cell lock args in Inputs.
+    // If it exists, verify it according to the process of withdrawal or withdrawal,
+    // if it does not exist, verify it according to the process of matching transaction.
+    let input_position = QueryIter::new(load_cell, Source::Input)
+        .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &args[..]);
 
-  match input_position {
-    None => return order::validate(),
-    // If it is an order cancellation or withdrawal operation, inputs must contain an input whose
-    // witness is not empty, and the lock hash of this input is equal to order book cell lock args.
-    Some(position) => match load_witness_args(position, Source::Input) {
-      Ok(_) => Ok(()),
-      Err(_) => Err(Error::WrongMatchInputWitness),
-    },
-  }
+    match input_position {
+        None => return order::validate(),
+        // If it is an order cancellation or withdrawal operation, inputs must contain an input
+        // whose witness is not empty, and the lock hash of this input is equal to order
+        // book cell lock args.
+        Some(position) => match load_witness_args(position, Source::Input) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(Error::WrongMatchInputWitness),
+        },
+    }
 }

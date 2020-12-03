@@ -167,26 +167,46 @@ fn test_ckb_sudt_partial_order() {
 
     // input2: sudt_amount(500sudt 0xBA43B7400u128) + order_amount(1000ckb 0x174876E800u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
-    let inputs_data = vec![
-        Bytes::from(
-            hex::decode("00F2052A01000000000000000000000000D6117E03000000000000000000000000743BA40B00000000").unwrap(),
-        ),
-        Bytes::from(
-            hex::decode("00743BA40B000000000000000000000000E8764817000000000000000000000000743BA40B00000001").unwrap(),
-        ),
-    ];
+
+    let input_1 = Order::new_builder()
+        .sudt_amount(50_000_000_000.pack())
+        .order_amount(150_000_000_000.pack())
+        .price(50_000_000_000.pack())
+        .order_type(0.into())
+        .build()
+        .as_bytes();
+
+    let input_2 = Order::new_builder()
+        .sudt_amount(50_000_000_000.pack())
+        .order_amount(100_000_000_000.pack())
+        .price(50_000_000_000.pack())
+        .order_type(1.into())
+        .build()
+        .as_bytes();
+
+    let inputs_data = vec![input_1, input_2];
 
     // output1: sudt_amount(200sudt 0x4A817C800u128) + order_amount(0sudt 0x12A05F200u128)
     // + price(5*10^10 0xBA43B7400u64) + buy(00)
     // output2: sudt_amount(349.55sudt 0x8237AF8C0u128) + order_amount(250ckb 0x5D21DBA00u128)
     // + price(5*10^10 0xBA43B7400u64) + sell(01)
-    let outputs_data = vec![
-        Bytes::from(
-            hex::decode("00C817A80400000000000000000000000000000000000000000000000000000000743BA40B00000000").unwrap()),
-        Bytes::from(
-            hex::decode("C0F87A2308000000000000000000000000BA1DD205000000000000000000000000743BA40B00000001").unwrap(),
-        ),
-    ];
+    let output_1 = Order::new_builder()
+        .sudt_amount(200_000_000_000.pack())
+        .order_amount(0.pack())
+        .price(50_000_000_000.pack())
+        .order_type(0.into())
+        .build()
+        .as_bytes();
+
+    let output_2 = Order::new_builder()
+        .sudt_amount(34_955_000_000.pack())
+        .order_amount(25_000_000_000.pack())
+        .price(50_000_000_000.pack())
+        .order_type(1.into())
+        .build()
+        .as_bytes();
+
+    let outputs_data = vec![output_1, output_2];
 
     let inputs_args = vec![
         Bytes::from(
