@@ -118,9 +118,9 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 
 [[package]]
 name = "blake2b-ref"
-version = "0.1.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9f6b7b71e3097ed6ee470bab30e1025dd1327eee94ab1e3040b5b5c3f992117"
+checksum = "95916998c798756098a4eb1b3f2cd510659705a9817bf203d61abd30fbec3e7b"
 
 [[package]]
 name = "blake2b-rs"
@@ -129,6 +129,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e35e362830ef90ecea16f09b21b75d22d33a8562a679c74ab4f4fa49b4fcb87"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "blake2b-rs"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a89a8565807f21b913288968e391819e7f9b2f0f46c7b89549c051cccf3a2771"
+dependencies = [
+ "cc",
+ "cty",
 ]
 
 [[package]]
@@ -160,9 +170,9 @@ checksum = "476e9cd489f9e121e02ffa6014a8ef220ecb15c05ed23fc34cca13925dc283fb"
 
 [[package]]
 name = "buddy-alloc"
-version = "0.3.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efba9eaa9fdf9fddf408904e3dc3dc414411053ef48c06edd3aac53d2d919e0e"
+checksum = "8ff9f338986406db85e2b5deb40a9255b796ca03a194c7457403d215173f3fd5"
 
 [[package]]
 name = "bumpalo"
@@ -235,15 +245,6 @@ dependencies = [
  "serde",
  "time",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "ckb-allocator"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "572ce0405d93e105d547f6d362c70c4b744e5e0984f9b9877c81afd070c8e2cc"
-dependencies = [
- "buddy-alloc",
 ]
 
 [[package]]
@@ -441,7 +442,7 @@ version = "0.37.0-pre"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96d698376acc6c3d978f10be5138d80f358875287980eb3c213553db952cc9b7"
 dependencies = [
- "blake2b-rs",
+ "blake2b-rs 0.1.5",
 ]
 
 [[package]]
@@ -461,7 +462,7 @@ dependencies = [
 name = "ckb-lib-secp256k1"
 version = "0.1.0"
 dependencies = [
- "blake2b-rs",
+ "blake2b-rs 0.2.0",
  "ckb-std",
 ]
 
@@ -631,12 +632,12 @@ dependencies = [
 
 [[package]]
 name = "ckb-std"
-version = "0.6.3"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f40fb1a5a0049abb71ff043629517089ef256b8e63c403b9359f73b7040ac9c6"
+checksum = "35e14bf64c694f078d6d33bad7e2b9a87d129d8b4e4c9a6cfc4364e2c6eddbd9"
 dependencies = [
+ "buddy-alloc",
  "cc",
- "ckb-allocator",
  "ckb-standalone-types",
 ]
 
@@ -662,7 +663,7 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "261dd95a93c09ea24397c85b4fbca061e1da2d6573189749aeb99fe840aaf0c9"
 dependencies = [
- "blake2b-rs",
+ "blake2b-rs 0.1.5",
  "faster-hex 0.3.1",
  "includedir",
  "includedir_codegen",
@@ -948,6 +949,12 @@ dependencies = [
  "cfg-if 0.1.10",
  "lazy_static",
 ]
+
+[[package]]
+name = "cty"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7313c0d620d0cb4dbd9d019e461a4beb501071ff46ec0ab933efb4daa76d73e3"
 
 [[package]]
 name = "debugid"
