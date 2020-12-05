@@ -20,6 +20,20 @@ use ckb_std::{
 };
 use error::Error;
 
+#[macro_export]
+macro_rules! blake2b {
+    ($($field: expr), *) => {{
+
+        let mut res = [0u8; 32];
+        let blake2b = share::hash::new_blake2b();
+
+        $( blake2b.update($field.as_ref()); )*
+
+        blake2b.finalize(&mut res);
+        res
+    }}
+}
+
 pub fn get_cell_type_hash(cell: &CellOutput) -> Result<Byte32, Error> {
     let script = cell.type_().to_opt().ok_or(Error::MissingTypeScript)?;
     Ok(script.code_hash())

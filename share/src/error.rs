@@ -53,7 +53,9 @@ pub enum Error {
     SubOverflow,
     MultiplOverflow,
     DivideOverflow,
+    ///
     NoInfoCell,
+    InvalidInfoLock,
 }
 
 impl From<SysError> for Error {
