@@ -29,4 +29,3 @@ pub fn main() -> Result<(), Error> {
 
     Ok(())
 }
-

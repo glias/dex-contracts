@@ -1,0 +1,8 @@
+import basic;
+
+struct OrderBookCellDataMol {
+    sudt_amount:    Uint128,
+    order_amount:   Uint128,
+    price:          Uint128,
+    order_type:     byte,
+}

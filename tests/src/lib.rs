@@ -7,6 +7,8 @@ use std::str::FromStr;
 #[cfg(test)]
 mod order_book_tests;
 
+mod generated;
+
 #[cfg(test)]
 mod liquidity_poll_tests;
 

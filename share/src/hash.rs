@@ -26,5 +26,3 @@ pub fn blake2b_256<T: AsRef<[u8]>>(s: T) -> [u8; 32] {
     }
     inner_blake2b_256(s)
 }
-
-

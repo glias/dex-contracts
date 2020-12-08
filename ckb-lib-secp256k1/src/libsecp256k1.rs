@@ -1,5 +1,8 @@
+use crate::alloc::{
+    alloc::{alloc, Layout},
+    boxed::Box,
+};
 use crate::code_hashes::CODE_HASH_SECP256K1;
-use crate::alloc::{alloc::{alloc, Layout}, boxed::Box};
 use ckb_std::dynamic_loading::{CKBDLContext, Symbol};
 
 /// function signature of validate_secp256k1_blake2b_sighash_all
@@ -47,8 +50,8 @@ impl Into<[u8; 33]> for Pubkey {
 }
 pub struct LibSecp256k1 {
     validate_blake2b_sighash_all: Symbol<ValidateBlake2bSighashAll>,
-    validate_signature: Symbol<ValidateSignature>,
-    load_prefilled_data: Symbol<LoadPrefilledData>,
+    validate_signature:           Symbol<ValidateSignature>,
+    load_prefilled_data:          Symbol<LoadPrefilledData>,
 }
 
 impl LibSecp256k1 {
