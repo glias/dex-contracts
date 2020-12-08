@@ -165,7 +165,7 @@ fn test_ckb_sudt_partial_order() {
     let input_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(5_000_000_000.pack())
         .order_amount(15_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -173,7 +173,7 @@ fn test_ckb_sudt_partial_order() {
     let input_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(100_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -187,7 +187,7 @@ fn test_ckb_sudt_partial_order() {
     let output_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(20_000_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -195,7 +195,7 @@ fn test_ckb_sudt_partial_order() {
     let output_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(34_955_000_000.pack())
         .order_amount(25_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -253,7 +253,7 @@ fn test_ckb_sudt_all_order1() {
     let input_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(5_000_000_000.pack())
         .order_amount(15_000_000_000.pack())
-        .price(52_000_000_000.pack())
+        .price(520_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -261,7 +261,7 @@ fn test_ckb_sudt_all_order1() {
     let input_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(75_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -276,7 +276,7 @@ fn test_ckb_sudt_all_order1() {
     let output_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(20_000_000_000.pack())
         .order_amount(0.pack())
-        .price(52_000_000_000.pack())
+        .price(520_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -284,7 +284,7 @@ fn test_ckb_sudt_all_order1() {
     let output_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(34_955_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -342,7 +342,7 @@ fn test_ckb_sudt_all_order2() {
     let input_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(0.pack())
         .order_amount(15_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -350,7 +350,7 @@ fn test_ckb_sudt_all_order2() {
     let input_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(75_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -358,7 +358,7 @@ fn test_ckb_sudt_all_order2() {
     let input_2 = OrderBookCellDataMol::new_builder()
         .sudt_amount(0.pack())
         .order_amount(5_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -366,7 +366,7 @@ fn test_ckb_sudt_all_order2() {
     let input_3 = OrderBookCellDataMol::new_builder()
         .sudt_amount(10_000_000_000.pack())
         .order_amount(20_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -380,7 +380,7 @@ fn test_ckb_sudt_all_order2() {
     let output_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(15_000_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -388,7 +388,7 @@ fn test_ckb_sudt_all_order2() {
     let output_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(34_955_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -396,7 +396,7 @@ fn test_ckb_sudt_all_order2() {
     let output_2 = OrderBookCellDataMol::new_builder()
         .sudt_amount(5_000_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -404,7 +404,7 @@ fn test_ckb_sudt_all_order2() {
     let output_3 = OrderBookCellDataMol::new_builder()
         .sudt_amount(5_988_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -564,7 +564,7 @@ fn test_ckb_sudt_all_order_capacity_error() {
     let input_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(5_000_000_000.pack())
         .order_amount(15_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -572,7 +572,7 @@ fn test_ckb_sudt_all_order_capacity_error() {
     let input_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(75_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -587,7 +587,7 @@ fn test_ckb_sudt_all_order_capacity_error() {
     let output_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(20_000_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -595,7 +595,7 @@ fn test_ckb_sudt_all_order_capacity_error() {
     let output_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(34_955_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -654,7 +654,7 @@ fn test_ckb_sudt_order_type_error() {
     let input_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(5_000_000_000.pack())
         .order_amount(15_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -662,7 +662,7 @@ fn test_ckb_sudt_order_type_error() {
     let input_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(100_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -677,7 +677,7 @@ fn test_ckb_sudt_order_type_error() {
     let output_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(20_000_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -685,7 +685,7 @@ fn test_ckb_sudt_order_type_error() {
     let output_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(34_955_000_000.pack())
         .order_amount(25_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -745,7 +745,7 @@ fn test_ckb_sudt_all_order_price_not_match() {
     let input_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(5_000_000_000.pack())
         .order_amount(15_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -753,7 +753,7 @@ fn test_ckb_sudt_all_order_price_not_match() {
     let input_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(50_000_000_000.pack())
         .order_amount(100_000_000_000.pack())
-        .price(60_000_000_000.pack())
+        .price(600_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
@@ -768,7 +768,7 @@ fn test_ckb_sudt_all_order_price_not_match() {
     let output_0 = OrderBookCellDataMol::new_builder()
         .sudt_amount(20_000_000_000.pack())
         .order_amount(0.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(0.into())
         .build()
         .as_bytes();
@@ -776,7 +776,7 @@ fn test_ckb_sudt_all_order_price_not_match() {
     let output_1 = OrderBookCellDataMol::new_builder()
         .sudt_amount(34_955_000_000.pack())
         .order_amount(25_000_000_000.pack())
-        .price(50_000_000_000.pack())
+        .price(500_000_000_000_000_000_000.pack())
         .order_type(1.into())
         .build()
         .as_bytes();
