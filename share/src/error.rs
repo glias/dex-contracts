@@ -47,8 +47,8 @@ pub enum Error {
     MissingTypeScript = 40,
     SellCkbFailed,
     BuyCkbFailed,
-    AddLiquidityFailed,
-    RemoveLiquidityFailed,
+    MintLiquidityFailed,
+    BurnLiquidityFailed,
     AddOverflow,
     SubOverflow,
     MultiplOverflow,
@@ -56,6 +56,17 @@ pub enum Error {
     ///
     NoInfoCell,
     InvalidInfoLock,
+    InvalidInfoData,
+    VerifyPriceFailed,
+    InvalidLiquidityCell,
+    InvalidChangeCell,
+    LiquidityPoolTokenDiff,
+    VersionDiff,
+    UnknownLiquidity,
+    BuySUDTFailed,
+    SellSUDTFailed,
+    AmountDiff,
+    InfoCreationError,
 }
 
 impl From<SysError> for Error {

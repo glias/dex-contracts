@@ -41,11 +41,25 @@ impl Into<u8> for OrderKind {
 }
 
 #[derive(Debug)]
+pub struct Price {
+    pub coefficient: u64,
+    pub exponent:    i8,
+}
+
+impl Price {
+    pub fn new(coefficient: u64, exponent: i8) -> Self {
+        Price {
+            coefficient,
+            exponent,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct LiquidityOrderCellData {
     pub sudt_amount:    u128,
     pub version:        u8,
-    pub price:          u64,
-    pub exponent:       i8,
+    pub price:          Price,
     pub info_type_hash: Bytes,
 }
 
@@ -55,8 +69,10 @@ impl LiquidityOrderCellData {
 
         let sudt_amount = decode_u128(&cell_raw_data[..16])?;
         let version = decode_u8(&cell_raw_data[16..17])?;
-        let price = decode_u64(&cell_raw_data[17..25])?;
-        let exponent = decode_i8(&cell_raw_data[25..26])?;
+        let price = Price::new(
+            decode_u64(&cell_raw_data[17..25])?,
+            decode_i8(&cell_raw_data[25..26])?,
+        );
         let mut buf = [0u8; 20];
         buf.copy_from_slice(&cell_raw_data[26..46]);
         let info_type_hash = Bytes::from(buf.to_vec());
@@ -65,7 +81,6 @@ impl LiquidityOrderCellData {
             sudt_amount,
             version,
             price,
-            exponent,
             info_type_hash,
         };
 
@@ -77,8 +92,7 @@ impl LiquidityOrderCellData {
 pub struct AssetOrderCellData {
     pub sudt_amount:  u128,
     pub order_amount: u128,
-    pub price:        u64,
-    pub exponent:     i8,
+    pub price:        Price,
     pub kind:         OrderKind,
     pub version:      u8,
 }
@@ -89,8 +103,10 @@ impl AssetOrderCellData {
 
         let sudt_amount = decode_u128(&cell_raw_data[..16])?;
         let order_amount = decode_u128(&cell_raw_data[16..32])?;
-        let price = decode_u64(&cell_raw_data[32..40])?;
-        let exponent = decode_i8(&cell_raw_data[40..41])?;
+        let price = Price::new(
+            decode_u64(&cell_raw_data[32..40])?,
+            decode_i8(&cell_raw_data[40..41])?,
+        );
         let kind = OrderKind::try_from(decode_u8(&cell_raw_data[41..42])?)?;
         let version = decode_u8(&cell_raw_data[42..43])?;
 
@@ -98,7 +114,6 @@ impl AssetOrderCellData {
             sudt_amount,
             order_amount,
             price,
-            exponent,
             kind,
             version,
         })
@@ -108,7 +123,7 @@ impl AssetOrderCellData {
 #[derive(Debug)]
 pub struct InfoCellData {
     pub ckb_reserve:              u128,
-    pub token_reserve:            u128,
+    pub sudt_reserve:             u128,
     pub total_liquidity:          u128,
     pub liquidity_sudt_type_hash: [u8; 20],
 }
@@ -118,14 +133,14 @@ impl InfoCellData {
         check_args_len(cell_raw_data.len(), INFO_CELL_DATA_LEN)?;
 
         let ckb_reserve = decode_u128(&cell_raw_data[..16])?;
-        let token_reserve = decode_u128(&cell_raw_data[16..32])?;
+        let sudt_reserve = decode_u128(&cell_raw_data[16..32])?;
         let total_liquidity = decode_u128(&cell_raw_data[32..48])?;
         let mut liquidity_sudt_type_hash = [0u8; 20];
         liquidity_sudt_type_hash.copy_from_slice(&cell_raw_data[48..68]);
 
         Ok(InfoCellData {
             ckb_reserve,
-            token_reserve,
+            sudt_reserve,
             total_liquidity,
             liquidity_sudt_type_hash,
         })

@@ -1,13 +1,15 @@
+use share::blake2b;
 use share::ckb_std::{
     ckb_constants::Source,
     ckb_types::{packed::Transaction, prelude::*},
     // debug,
-    high_level::{load_cell, load_script, load_transaction, QueryIter},
+    high_level::{
+        load_cell, load_cell_type_hash, load_script, load_script_hash, load_transaction, QueryIter,
+    },
 };
 use share::error::Error;
-use share::hash::new_blake2b;
 
-pub fn verify_type_id(input: Transaction) -> Result<(), Error> {
+pub fn verify_type_id() -> Result<(), Error> {
     // TYPE_ID script should only accept one argument,
     // which is the hash of all inputs when creating
     // the cell.
@@ -31,21 +33,29 @@ pub fn verify_type_id(input: Transaction) -> Result<(), Error> {
     // 2. Cell index of the first CellInput's OutPoint
     // 3. Index of the first output cell in current script group.
     let tx = load_transaction()?;
+    let self_hash = load_script_hash()?;
     if QueryIter::new(load_cell, Source::GroupOutput).count() == 1 {
-        let first_cell_input = QueryIter::new(load_cell, Source::GroupInput)
-            .last()
-            .ok_or(Error::InvalidTypeID)?;
-        let first_output_index: u64 = 0;
+        let first_cell_input = load_cell(0, Source::Input)?;
+        let first_output_index = QueryIter::new(load_cell_type_hash, Source::Output)
+            .enumerate()
+            .find_map(|(idx, hash)| {
+                if hash == Some(self_hash) {
+                    Some(idx)
+                } else {
+                    None
+                }
+            })
+            .unwrap() as u64;
 
-        let mut blake2b = new_blake2b();
-        blake2b.update(first_cell_input.as_slice());
-        blake2b.update(&first_output_index.to_le_bytes());
-        let mut ret = [0; 32];
-        blake2b.finalize(&mut ret);
+        let hash = blake2b!(
+            first_cell_input.as_slice(),
+            first_output_index.to_le_bytes()
+        );
 
-        if ret[..] != load_script()?.args().raw_data()[..] {
+        if hash[..] != load_script()?.args().raw_data()[..] {
             return Err(Error::InvalidTypeID);
         }
     }
+
     Ok(())
 }

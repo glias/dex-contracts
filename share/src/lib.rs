@@ -23,7 +23,6 @@ use error::Error;
 #[macro_export]
 macro_rules! blake2b {
     ($($field: expr), *) => {{
-
         let mut res = [0u8; 32];
         let blake2b = share::hash::new_blake2b();
 

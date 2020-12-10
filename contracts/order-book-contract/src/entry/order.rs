@@ -15,7 +15,6 @@ use share::ckb_std::{
 };
 
 use share::error::Error;
-use share::{check_lock_hash, check_type_hash, decode_u128, decode_u64, decode_u8};
 
 // The dex fee rate is fixed at 0.3%
 const FEE: u128 = 3;
