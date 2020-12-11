@@ -1,13 +1,12 @@
 use share::blake2b;
 use share::ckb_std::{
     ckb_constants::Source,
-    ckb_types::{packed::Transaction, prelude::*},
+    ckb_types::prelude::*,
     // debug,
-    high_level::{
-        load_cell, load_cell_type_hash, load_script, load_script_hash, load_transaction, QueryIter,
-    },
+    high_level::{load_cell, load_cell_type_hash, load_script, load_script_hash, QueryIter},
 };
-use share::error::Error;
+
+use crate::error::Error;
 
 pub fn verify_type_id() -> Result<(), Error> {
     // TYPE_ID script should only accept one argument,
@@ -32,7 +31,6 @@ pub fn verify_type_id() -> Result<(), Error> {
     // 1. Transaction hash of the first CellInput's OutPoint
     // 2. Cell index of the first CellInput's OutPoint
     // 3. Index of the first output cell in current script group.
-    let tx = load_transaction()?;
     let self_hash = load_script_hash()?;
     if QueryIter::new(load_cell, Source::GroupOutput).count() == 1 {
         let first_cell_input = load_cell(0, Source::Input)?;

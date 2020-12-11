@@ -2,10 +2,10 @@ use core::cmp::{Eq, PartialEq};
 use core::convert::TryFrom;
 use core::result::Result;
 
-use crate::error::Error;
 use crate::{check_args_len, decode_i8, decode_u128, decode_u64, decode_u8};
 
 use ckb_std::ckb_types::bytes::Bytes;
+use ckb_std::error::SysError as Error;
 
 const LIQUIDITY_ORDER_DATA_LEN: usize = 46;
 const ASSET_ORDER_DATA_LEN: usize = 43;
@@ -26,7 +26,7 @@ impl TryFrom<u8> for OrderKind {
         match input {
             0 => Ok(OrderKind::Sell),
             1 => Ok(OrderKind::Buy),
-            _ => Err(Error::InvalidOrderKind),
+            _ => Err(Error::Encoding),
         }
     }
 }

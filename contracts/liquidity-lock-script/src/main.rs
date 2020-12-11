@@ -10,9 +10,10 @@
 #![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 
+mod error;
+
 use core::result::Result;
 
-use share::ckb_std;
 use share::ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
@@ -21,9 +22,9 @@ use share::ckb_std::{
         load_cell, load_cell_data, load_cell_lock_hash, load_script, load_witness_args, QueryIter,
     },
 };
+use share::{ckb_std, get_cell_type_hash};
 
-use share::error::Error;
-use share::get_cell_type_hash;
+use error::Error;
 
 default_alloc!(4 * 1024, 2048 * 1024, 64);
 

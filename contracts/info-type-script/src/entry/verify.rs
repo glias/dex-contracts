@@ -5,47 +5,32 @@ use num_bigint::BigUint;
 
 // Import CKB syscalls and structures
 // https://nervosnetwork.github.io/ckb-std/riscv64imac-unknown-none-elf/doc/ckb_std/index.html
-use share::cell::{InfoCellData, LiquidityOrderCellData, PoolCellData, Price, SUDTCellData};
+use share::cell::{InfoCellData, LiquidityOrderCellData, PoolCellData, Price};
 use share::ckb_std::{
     ckb_constants::Source,
     ckb_types::{packed::CellOutput, prelude::*},
     // debug,
     high_level::{load_cell, load_cell_data, QueryIter},
 };
-use share::error::Error;
 use share::{decode_u128, get_cell_type_hash};
 
-const LIQUIDITY_ORDER_LOCK_CODE_HASH: [u8; 32] = [0u8; 32];
-const ASSET_ORDER_LOCK_CODE_HASH: [u8; 32] = [1u8; 32];
+use crate::error::Error;
 
-const POOL_TYPE_CODE_HASH: [u8; 32] = [3u8; 32];
-const POOL_LOCK_CODE_HASH: [u8; 32] = [3u8; 32];
 const INFO_VERSION: u8 = 0;
 
 const THOUSAND: u128 = 1_000;
 const TEN_THOUSAND: u128 = 10_000;
-const ASSET_ORDER_FEE: u128 = 0;
-const SUDT_CAPACITY: u128 = 10;
-const INFO_CAPACITY: u64 = 15;
-const POOL_BASE_CAPACITY: u64 = 20;
-const INFO_LOCK_ARGS_LEN: usize = 20;
-const ORDER_LOCK_ARGS_LEN: usize = 53;
-
-const CKB_STRING: &str = "ckb";
+const SUDT_CAPACITY: u64 = 15_400_000_000;
+const INFO_CAPACITY: u64 = 21_400_000_000;
 
 pub fn verify_info_type_liquidity_tx() -> Result<(), Error> {
     let info_in_cell = load_cell(0, Source::Input)?;
     let info_in_data = InfoCellData::from_raw(&load_cell_data(0, Source::Input)?)?;
     let pool_in_cell = load_cell(1, Source::Input)?;
-    let pool_in_data = PoolCellData::from_raw(&load_cell_data(1, Source::Input)?)?;
-    let matcher_in_cell = load_cell(2, Source::Input)?;
-    let matcher_in_data = SUDTCellData::from_raw(&load_cell_data(2, Source::Input)?)?;
     let info_out_cell = load_cell(0, Source::Output)?;
     let info_out_data = InfoCellData::from_raw(&load_cell_data(0, Source::Output)?)?;
     let pool_out_cell = load_cell(1, Source::Output)?;
     let pool_out_data = PoolCellData::from_raw(&load_cell_data(1, Source::Output)?)?;
-    let matcher_out_cell = load_cell(2, Source::Output)?;
-    let matcher_out_data = SUDTCellData::from_raw(&load_cell_data(2, Source::Output)?)?;
 
     let mut liquidity_sudt_type_hash = [0u8; 20];
     liquidity_sudt_type_hash.copy_from_slice(&info_in_data.liquidity_sudt_type_hash);
@@ -81,24 +66,22 @@ pub fn verify_info_type_liquidity_tx() -> Result<(), Error> {
             return Err(Error::InvalidLiquidityCell);
         }
 
-        match &liquidity_code_hash[0..20] {
-            liquidity_sudt_type_hash => {
-                burn_liquidity(
-                    idx,
-                    &liquidity_order_cell,
-                    &liquidity_order_data,
-                    &pool_out_cell,
-                    ckb_reserve,
-                    sudt_reserve,
-                    total_liquidity,
-                    &mut pool_ckb_paid,
-                    &mut pool_sudt_paid,
-                    &mut user_liquidity_burned,
-                )?;
-                base_index = idx;
-            }
-
-            pool_type_hash => mint_liquidity(
+        if &liquidity_code_hash[0..20] == &liquidity_sudt_type_hash[0..20] {
+            burn_liquidity(
+                idx,
+                &liquidity_order_cell,
+                &liquidity_order_data,
+                &pool_out_cell,
+                ckb_reserve,
+                sudt_reserve,
+                total_liquidity,
+                &mut pool_ckb_paid,
+                &mut pool_sudt_paid,
+                &mut user_liquidity_burned,
+            )?;
+            base_index = idx;
+        } else if &liquidity_code_hash[0..20] == &pool_type_hash[0..20] {
+            mint_liquidity(
                 base_index,
                 idx,
                 &info_out_data,
@@ -111,9 +94,9 @@ pub fn verify_info_type_liquidity_tx() -> Result<(), Error> {
                 &mut ckb_collect,
                 &mut sudt_collect,
                 &mut user_liquidity_mint,
-            )?,
-
-            _ => return Err(Error::UnknownLiquidity),
+            )?;
+        } else {
+            return Err(Error::UnknownLiquidity);
         }
     }
 
@@ -130,7 +113,7 @@ pub fn verify_info_type_liquidity_tx() -> Result<(), Error> {
                     * user_liquidity_burned
                 + BigUint::from(user_liquidity_mint) * TEN_THOUSAND * TEN_THOUSAND)
     {
-        return Err(Error::InvalidData);
+        return Err(Error::InvalidFee);
     }
 
     if (pool_out_cell.capacity().unpack() as u128)
@@ -138,14 +121,13 @@ pub fn verify_info_type_liquidity_tx() -> Result<(), Error> {
             - info_in_data.ckb_reserve)
         || pool_out_data.sudt_amount != info_out_data.sudt_reserve
     {
-        return Err(Error::InvalidData);
+        return Err(Error::InvalidCKBAmount);
     }
 
     Ok(())
 }
 
 pub fn verify_info_type_asset_tx() -> Result<(), Error> {
-    let info_in_cell = load_cell(0, Source::GroupInput)?;
     let info_in_data = InfoCellData::from_raw(&load_cell_data(0, Source::Input)?)?;
     let pool_in_cell = load_cell(1, Source::GroupInput)?;
     let pool_in_data = PoolCellData::from_raw(&load_cell_data(1, Source::Input)?)?;
@@ -165,14 +147,14 @@ pub fn verify_info_type_asset_tx() -> Result<(), Error> {
     let ckb_reserve = info_in_data.ckb_reserve;
     let sudt_reserve = info_in_data.sudt_reserve;
 
-    if ckb_got > 0 && sudt_got < 0 {
+    if ckb_got > 0 && sudt_got == 0 {
         let sudt_paid = info_in_data.sudt_reserve - info_out_data.sudt_reserve;
         if BigUint::from(ckb_got) * 998u128 * (sudt_reserve - sudt_paid)
             != BigUint::from(ckb_reserve) * sudt_paid * THOUSAND
         {
             return Err(Error::BuySUDTFailed);
         }
-    } else if ckb_got < 0 && sudt_got > 0 {
+    } else if ckb_got == 0 && sudt_got > 0 {
         let ckb_paid = info_in_data.ckb_reserve - info_out_data.ckb_reserve;
         if BigUint::from(sudt_got) * 998u128 * ckb_reserve
             != BigUint::from(ckb_paid) * (sudt_reserve * THOUSAND + 998u128 * sudt_got)
@@ -225,8 +207,8 @@ fn mint_liquidity(
 
         let change_cell_data = load_cell_data(relative_index * 2 + base_index + 1, Source::Output)?;
 
-        let mut ckb_injected = 0;
-        let mut sudt_injected = 0;
+        let mut ckb_injected = 0u128;
+        let mut sudt_injected = 0u128;
 
         if change_cell_data.len() == 0 {
             if change_cell.type_().to_opt().is_none()
@@ -237,14 +219,14 @@ fn mint_liquidity(
             }
 
             sudt_injected = liquidity_order_data.sudt_amount;
-            ckb_injected = (liquidity_order_cell.capacity().unpack() as u128)
-                - SUDT_CAPACITY
-                - (change_cell.capacity().unpack() as u128);
+            ckb_injected = liquidity_order_cell.capacity().unpack() as u128
+                - SUDT_CAPACITY as u128
+                - change_cell.capacity().unpack() as u128;
 
             if BigUint::from(user_liquidity) * TEN_THOUSAND * sudt_reserve
                 == BigUint::from(sudt_injected) * 9985u128 * total_liquidity
             {
-                verify_price(ckb_injected, sudt_injected, liquidity_cell_data.price, 15)?;
+                verify_price(ckb_injected, sudt_injected, &liquidity_cell_data.price, 15)?;
             } else {
                 return Err(Error::LiquidityPoolTokenDiff);
             }
@@ -259,12 +241,13 @@ fn mint_liquidity(
 
             sudt_injected =
                 liquidity_order_data.sudt_amount - decode_u128(&change_cell_data[..16])?;
-            ckb_injected = liquidity_order_cell.capacity().unpack() as u128 - SUDT_CAPACITY * 2;
+            ckb_injected =
+                liquidity_order_cell.capacity().unpack() as u128 - SUDT_CAPACITY as u128 * 2;
 
             if BigUint::from(user_liquidity) * TEN_THOUSAND * ckb_reserve
                 == BigUint::from(ckb_injected) * 9985u128 * total_liquidity
             {
-                verify_price(ckb_injected, sudt_injected, liquidity_cell_data.price, 15)?;
+                verify_price(ckb_injected, sudt_injected, &liquidity_cell_data.price, 15)?;
             } else {
                 return Err(Error::LiquidityPoolTokenDiff);
             }
@@ -289,7 +272,7 @@ fn mint_liquidity(
         }
 
         let sudt_injected = liquidity_order_data.sudt_amount;
-        let ckb_injected = liquidity_order_cell.capacity().unpack() as u128 - SUDT_CAPACITY;
+        let ckb_injected = liquidity_order_cell.capacity().unpack() - SUDT_CAPACITY;
         let mint_liquidity: u128 = (BigUint::from(sudt_injected) * ckb_injected)
             .sqrt()
             .try_into()
@@ -300,7 +283,7 @@ fn mint_liquidity(
             return Err(Error::LiquidityPoolTokenDiff);
         }
 
-        *ckb_collect += ckb_injected;
+        *ckb_collect += ckb_injected as u128;
         *sudt_collect += sudt_injected;
         *user_liquidity_mint += user_liquidity;
     }
@@ -341,7 +324,7 @@ fn burn_liquidity(
     let user_sudt_got = decode_u128(&ckb_sudt_data[0..20])?;
     let burned_liquidity = liquidity_order_data.sudt_amount;
 
-    verify_price(user_ckb_got, user_sudt_got, liquidity_order_data.price, 15)?;
+    verify_price(user_ckb_got, user_sudt_got, &liquidity_order_data.price, 15)?;
 
     if BigUint::from(total_liquidity) * TEN_THOUSAND * user_sudt_got
         != BigUint::from(burned_liquidity) * 9985u128 * sudt_reserve
@@ -358,13 +341,13 @@ fn burn_liquidity(
     Ok(())
 }
 
-fn verify_price(amount_0: u128, amount_1: u128, price: Price, slipage: u128) -> Result<(), Error> {
+fn verify_price(amount_0: u128, amount_1: u128, price: &Price, slipage: u128) -> Result<(), Error> {
     if price.exponent < 0 {
         let exp = price.exponent.abs() as u32;
         let price = BigUint::from(price.coefficient) * BigUint::from(10u8).pow(exp);
         let amount_1 = BigUint::from(amount_1);
 
-        if price * amount_0 * TEN_THOUSAND > amount_1 * (TEN_THOUSAND + slipage)
+        if price.clone() * amount_0 * TEN_THOUSAND > amount_1.clone() * (TEN_THOUSAND + slipage)
             || price * amount_0 * TEN_THOUSAND < amount_1 * (TEN_THOUSAND - slipage)
         {
             return Err(Error::VerifyPriceFailed);
@@ -374,7 +357,7 @@ fn verify_price(amount_0: u128, amount_1: u128, price: Price, slipage: u128) -> 
             BigUint::from(price.coefficient) * BigUint::from(10u8).pow(price.exponent as u32);
         let amount_0 = BigUint::from(amount_0);
 
-        if amount_0 * TEN_THOUSAND > price * amount_1 * (TEN_THOUSAND + slipage)
+        if amount_0.clone() * TEN_THOUSAND > price.clone() * amount_1 * (TEN_THOUSAND + slipage)
             || amount_0 * TEN_THOUSAND < price * amount_1 * (TEN_THOUSAND - slipage)
         {
             return Err(Error::VerifyPriceFailed);

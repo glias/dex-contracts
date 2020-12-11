@@ -17,25 +17,25 @@ use share::ckb_std::{
     // debug,
     high_level::{load_cell, load_cell_data, load_cell_lock_hash, load_cell_type_hash, QueryIter},
 };
-use share::{blake2b, error::Error, get_cell_type_hash};
-
+use share::{blake2b, get_cell_type_hash};
 use type_id::verify_type_id;
+
+use crate::error::Error;
 
 const INFO_TYPE_CODE_HASH: [u8; 32] = [2u8; 32];
 const INFO_LOCK_CODE_HASH: [u8; 32] = [2u8; 32];
-const POOL_BASE_CAPACITY: u128 = 0;
+const POOL_BASE_CAPACITY: u128 = 16_200_000_000;
+
+lazy_static::lazy_static! {
+    static ref HASH_TYPE_DATA: Byte = Byte::new(1u8);
+}
 
 // Alloc 4K fast HEAP + 2M HEAP to receives PrefilledData
 default_alloc!(4 * 1024, 2048 * 1024, 64);
 
-const fn hash_type_data() -> Byte {
-    Byte::new(1u8)
-}
-
 pub fn main() -> Result<(), Error> {
     verify_type_id()?;
 
-    let info_in_cell = load_cell(0, Source::Input)?;
     let info_in_data = InfoCellData::from_raw(&load_cell_data(0, Source::Input)?)?;
     let pool_in_cell = load_cell(1, Source::Input)?;
     let pool_in_data = PoolCellData::from_raw(&load_cell_data(1, Source::Input)?)?;
@@ -89,7 +89,7 @@ pub fn verify_info_creation(
             .map(|hash| hash == INFO_LOCK_CODE_HASH)
             .count()
             != 2
-            || info_out_cell.lock().hash_type() != hash_type_data()
+            || info_out_cell.lock().hash_type() != *HASH_TYPE_DATA
             || info_out_lock_args[0..20]
                 != blake2b!("ckb", get_cell_type_hash(&pool_out_cell)?.unpack())[0..20]
             || info_out_lock_args[20..40] != get_cell_type_hash(&info_out_cell)?.unpack()[0..20]

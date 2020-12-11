@@ -14,17 +14,16 @@ pub mod hash;
 pub mod signature;
 
 use ckb_std::{
-    ckb_constants::Source,
     ckb_types::packed::{Byte32, CellOutput},
-    high_level::{load_cell_lock_hash, load_cell_type_hash},
+    error::SysError,
 };
-use error::Error;
+use error::HelperError;
 
 #[macro_export]
 macro_rules! blake2b {
     ($($field: expr), *) => {{
         let mut res = [0u8; 32];
-        let blake2b = share::hash::new_blake2b();
+        let mut blake2b = share::hash::new_blake2b();
 
         $( blake2b.update($field.as_ref()); )*
 
@@ -33,21 +32,24 @@ macro_rules! blake2b {
     }}
 }
 
-pub fn get_cell_type_hash(cell: &CellOutput) -> Result<Byte32, Error> {
-    let script = cell.type_().to_opt().ok_or(Error::MissingTypeScript)?;
+pub fn get_cell_type_hash(cell: &CellOutput) -> Result<Byte32, HelperError> {
+    let script = cell
+        .type_()
+        .to_opt()
+        .ok_or(HelperError::MissingTypeScript)?;
     Ok(script.code_hash())
 }
 
-pub fn check_args_len(expected: usize, actual: usize) -> Result<(), Error> {
+pub fn check_args_len(expected: usize, actual: usize) -> Result<(), SysError> {
     if actual != expected {
-        return Err(Error::Encoding);
+        return Err(SysError::Encoding);
     }
     Ok(())
 }
 
-pub fn decode_u128(data: &[u8]) -> Result<u128, Error> {
+pub fn decode_u128(data: &[u8]) -> Result<u128, SysError> {
     if data.len() != 16 {
-        return Err(Error::InvalidEncodeNumber);
+        return Err(SysError::Encoding);
     }
 
     let mut buf = [0u8; 16];
@@ -56,9 +58,9 @@ pub fn decode_u128(data: &[u8]) -> Result<u128, Error> {
     Ok(u128::from_le_bytes(buf))
 }
 
-pub fn decode_u64(data: &[u8]) -> Result<u64, Error> {
+pub fn decode_u64(data: &[u8]) -> Result<u64, SysError> {
     if data.len() != 8 {
-        return Err(Error::InvalidEncodeNumber);
+        return Err(SysError::Encoding);
     }
 
     let mut buf = [0u8; 8];
@@ -66,9 +68,9 @@ pub fn decode_u64(data: &[u8]) -> Result<u64, Error> {
     Ok(u64::from_le_bytes(buf))
 }
 
-pub fn decode_u8(data: &[u8]) -> Result<u8, Error> {
+pub fn decode_u8(data: &[u8]) -> Result<u8, SysError> {
     if data.len() != 1 {
-        return Err(Error::InvalidEncodeNumber);
+        return Err(SysError::Encoding);
     }
 
     let mut buf = [0u8; 1];
@@ -76,30 +78,12 @@ pub fn decode_u8(data: &[u8]) -> Result<u8, Error> {
     Ok(u8::from_le_bytes(buf))
 }
 
-pub fn decode_i8(data: &[u8]) -> Result<i8, Error> {
+pub fn decode_i8(data: &[u8]) -> Result<i8, SysError> {
     if data.len() != 1 {
-        return Err(Error::InvalidEncodeNumber);
+        return Err(SysError::Encoding);
     }
 
     let mut buf = [0u8; 1];
     buf.copy_from_slice(data);
     Ok(i8::from_le_bytes(buf))
-}
-
-pub fn check_lock_hash(index: usize) -> Result<(), Error> {
-    let input_lock_hash = load_cell_lock_hash(index, Source::Input)?;
-    let output_lock_hash = load_cell_lock_hash(index, Source::Output)?;
-    if input_lock_hash != output_lock_hash {
-        return Err(Error::LockHashNotSame);
-    }
-    Ok(())
-}
-
-pub fn check_type_hash(index: usize) -> Result<(), Error> {
-    let input_type_hash = load_cell_type_hash(index, Source::Input)?;
-    let output_type_hash = load_cell_type_hash(index, Source::Output)?;
-    if input_type_hash != output_type_hash {
-        return Err(Error::TypeHashNotSame);
-    }
-    Ok(())
 }

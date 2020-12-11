@@ -10,6 +10,8 @@
 #![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 
+mod error;
+
 use core::result::Result;
 
 use share::ckb_std;
@@ -21,8 +23,9 @@ use share::ckb_std::{
 };
 
 use share::blake2b;
-use share::error::Error;
 use share::get_cell_type_hash;
+
+use error::Error;
 
 default_alloc!(4 * 1024, 2048 * 1024, 64);
 
@@ -45,11 +48,11 @@ fn main() -> Result<(), Error> {
     let info = load_cell(0, Source::GroupInput)?;
     let pool = load_cell(1, Source::GroupInput)?;
     let pool_type_hash = get_cell_type_hash(&pool)?;
-    let self_args = load_script()?.args().as_slice();
+    let self_args = load_script()?.args();
     let hash = blake2b!("ckb", pool_type_hash.unpack());
 
-    if hash[0..20] != self_args[0..20]
-        || get_cell_type_hash(&info)?.as_slice()[0..20] != self_args[20..40]
+    if hash[0..20] != self_args.as_slice()[0..20]
+        || get_cell_type_hash(&info)?.as_slice()[0..20] != self_args.as_slice()[20..40]
     {
         return Err(Error::InvalidInfoLock);
     }

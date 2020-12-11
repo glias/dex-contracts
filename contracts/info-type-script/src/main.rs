@@ -10,11 +10,10 @@
 #![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 
-// define modules
 mod entry;
+mod error;
 
 use share::ckb_std;
-use share::ckb_std::default_alloc;
 
 ckb_std::entry!(program_entry);
 

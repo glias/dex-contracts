@@ -31,42 +31,6 @@ pub enum Error {
     InvalidEncodeNumber,
     LiquiditySUDTTypeHashMismatch = 25,
     PackingMixin,
-    InvalidOrderKind,
-    InvalidTypeID,
-    InvalidCodeHash,
-    InvalidTypeHash = 30,
-    OnlyOneLiquidityPool,
-    InvalidCount,
-    ImpossibleAction,
-    LiquidityAction,
-    InvalidFee = 35,
-    InvalidData,
-    InputCellError,
-    OutputCellError,
-    PoolNotFound,
-    MissingTypeScript = 40,
-    SellCkbFailed,
-    BuyCkbFailed,
-    MintLiquidityFailed,
-    BurnLiquidityFailed,
-    AddOverflow,
-    SubOverflow,
-    MultiplOverflow,
-    DivideOverflow,
-    ///
-    NoInfoCell,
-    InvalidInfoLock,
-    InvalidInfoData,
-    VerifyPriceFailed,
-    InvalidLiquidityCell,
-    InvalidChangeCell,
-    LiquidityPoolTokenDiff,
-    VersionDiff,
-    UnknownLiquidity,
-    BuySUDTFailed,
-    SellSUDTFailed,
-    AmountDiff,
-    InfoCreationError,
 }
 
 impl From<SysError> for Error {
@@ -80,4 +44,10 @@ impl From<SysError> for Error {
             Unknown(err_code) => panic!("unexpected sys error {}", err_code),
         }
     }
+}
+
+#[repr(i8)]
+#[derive(Debug)]
+pub enum HelperError {
+    MissingTypeScript = 1,
 }
