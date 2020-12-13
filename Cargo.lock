@@ -44,9 +44,9 @@ name = "asset-order-lockscript"
 version = "0.1.0"
 dependencies = [
  "ckb-std",
- "ckb-tool",
  "num-bigint",
  "num-traits",
+ "share",
 ]
 
 [[package]]

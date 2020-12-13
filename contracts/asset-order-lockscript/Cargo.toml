@@ -7,6 +7,6 @@ edition = "2018"
 
 [dependencies]
 ckb-std = "0.7"
-ckb-tool = "0.2"
+share = { path = "../../share" }
 num-bigint = { version = "0.3", default-features = false }
 num-traits = { version = "0.2", default-features = false }

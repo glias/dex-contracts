@@ -23,7 +23,7 @@ use core::result::Result;
 use ckb_std::ckb_types::{bytes::Bytes, prelude::*};
 use ckb_std::high_level::{load_cell, load_script, load_witness_args, QueryIter};
 use ckb_std::{ckb_constants::Source, default_alloc};
-use ckb_tool::ckb_hash::blake2b_256;
+use share::hash::blake2b_256;
 
 use crate::error::Error;
 
