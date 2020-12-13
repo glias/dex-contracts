@@ -9,7 +9,7 @@ version = "0.4.3 13d6f1d"
 deployment = "deployment.toml"
 
 [[contracts]]
-name = "order-book-contract"
+name = "asset-order-lockscript"
 template_type = "Rust"
 
 [[contracts]]

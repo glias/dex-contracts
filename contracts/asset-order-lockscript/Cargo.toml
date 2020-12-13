@@ -1,5 +1,5 @@
 [package]
-name = "order-book-contract"
+name = "asset-order-lockscript"
 version = "0.1.0"
 edition = "2018"
 
@@ -7,7 +7,6 @@ edition = "2018"
 
 [dependencies]
 ckb-std = "0.7"
-ckb-lib-secp256k1 = { path = "../../ckb-lib-secp256k1" }
-share = { path = "../../share" }
+ckb-tool = "0.2"
 num-bigint = { version = "0.3", default-features = false }
 num-traits = { version = "0.2", default-features = false }

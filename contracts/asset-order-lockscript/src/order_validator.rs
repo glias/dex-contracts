@@ -1,20 +1,15 @@
 use alloc::vec::Vec;
 use core::result::Result;
 
+use ckb_std::high_level::{
+    load_cell_capacity, load_cell_data, load_cell_lock_hash, load_cell_type_hash, load_input,
+    QueryIter,
+};
+use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, debug};
 use num_bigint::BigUint;
 use num_traits::Zero;
 
-use ckb_std::{
-    ckb_constants::Source,
-    ckb_types::prelude::*,
-    debug,
-    high_level::{
-        load_cell_capacity, load_cell_data, load_cell_lock_hash, load_cell_type_hash, load_input,
-        QueryIter,
-    },
-};
-
-use share::error::Error;
+use crate::error::Error;
 
 // The dex fee rate is fixed at 0.3%
 const FEE: u128 = 3;

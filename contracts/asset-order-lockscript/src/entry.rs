@@ -1,8 +1,8 @@
-// Order book script
+// Asset order lock script
 //
-// An order book script using 41bytes cell data
+// An Asset order lock script using 41bytes cell data
 //
-// This order book script has three scenarios:
+// This asset order lock script has three scenarios:
 //
 // 1. The placing order operation will generate cells, which contain sudt type script and
 // data conforming to certain rules. Cell data includes four fields: sudt_ mount(uint128),
@@ -20,17 +20,12 @@
 
 use core::result::Result;
 
-use ckb_std::{
-    ckb_constants::Source,
-    ckb_types::{bytes::Bytes, prelude::*},
-    default_alloc,
-    high_level::{load_cell, load_script, load_witness_args, QueryIter},
-};
+use ckb_std::ckb_types::{bytes::Bytes, prelude::*};
+use ckb_std::high_level::{load_cell, load_script, load_witness_args, QueryIter};
+use ckb_std::{ckb_constants::Source, default_alloc};
+use ckb_tool::ckb_hash::blake2b_256;
 
-use share::error::Error;
-use share::hash::blake2b_256;
-
-mod order;
+use crate::error::Error;
 
 // Alloc 4K fast HEAP + 2M HEAP to receives PrefilledData
 default_alloc!(4 * 1024, 2048 * 1024, 64);
@@ -51,7 +46,7 @@ pub fn main() -> Result<(), Error> {
         .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &args[..]);
 
     match input_position {
-        None => return order::validate(),
+        None => return crate::order_validator::validate(),
         // If it is an order cancellation or withdrawal operation, inputs must contain an input
         // whose witness is not empty, and the lock hash of this input is equal to order
         // book cell lock args.

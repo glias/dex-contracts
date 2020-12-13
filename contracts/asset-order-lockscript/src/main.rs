@@ -11,6 +11,8 @@
 #![feature(panic_info_message)]
 
 mod entry;
+mod error;
+mod order_validator;
 
 ckb_std::entry!(program_entry);
 

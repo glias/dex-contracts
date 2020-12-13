@@ -2,7 +2,7 @@ schema:
 	make -C tests schema
 
 fmt:
-	cd contracts/order-book-contract && cargo fmt --all
+	cd contracts/asset-order-lockscript && cargo fmt --all
 	cd tests && cargo fmt --all
 
 build:

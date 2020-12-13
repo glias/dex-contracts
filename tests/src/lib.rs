@@ -5,8 +5,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[cfg(test)]
-mod order_book_tests;
+mod asset_order_lockscript;
 
+#[allow(dead_code)]
 mod generated;
 
 #[cfg(test)]

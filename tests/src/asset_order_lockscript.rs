@@ -5,13 +5,9 @@ use ckb_tool::ckb_crypto::secp::{Generator, Privkey};
 use ckb_tool::ckb_error::assert_error_eq;
 use ckb_tool::ckb_hash::{blake2b_256, new_blake2b};
 use ckb_tool::ckb_script::ScriptError;
-use ckb_tool::ckb_types::{
-    bytes::Bytes,
-    core::{Capacity, TransactionBuilder, TransactionView},
-    packed::{self, *},
-    prelude::*,
-    H256,
-};
+use ckb_tool::ckb_types::core::{Capacity, TransactionBuilder, TransactionView};
+use ckb_tool::ckb_types::packed::{self, *};
+use ckb_tool::ckb_types::{bytes::Bytes, prelude::*, H256};
 use generated::cell_data::OrderBookCellDataMol;
 use molecule::prelude::*;
 
@@ -78,7 +74,7 @@ fn build_test_context(
 ) -> (Context, TransactionView) {
     // deploy order book script
     let mut context = Context::default();
-    let order_bin: Bytes = Loader::default().load_binary("order-book-contract");
+    let order_bin: Bytes = Loader::default().load_binary("asset-order-lockscript");
     let order_out_point = context.deploy_cell(order_bin);
     // deploy always_success script
     let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
@@ -835,7 +831,7 @@ fn test_cancel_order() {
 
     // deploy contract
     let mut context = Context::default();
-    let order_bin: Bytes = Loader::default().load_binary("order-book-contract");
+    let order_bin: Bytes = Loader::default().load_binary("asset-order-lockscript");
     let order_out_point = context.deploy_cell(order_bin);
 
     let secp256k1_bin: Bytes =
@@ -950,7 +946,7 @@ fn test_cancel_order_with_wrong_key() {
 
     // deploy contract
     let mut context = Context::default();
-    let order_bin: Bytes = Loader::default().load_binary("order-book-contract");
+    let order_bin: Bytes = Loader::default().load_binary("asset-order-lockscript");
     let order_out_point = context.deploy_cell(order_bin);
 
     let secp256k1_bin: Bytes =
