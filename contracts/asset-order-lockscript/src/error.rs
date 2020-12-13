@@ -1,5 +1,6 @@
 use ckb_std::error::SysError;
 
+// TODO: remove unused error?
 /// Error
 #[repr(i8)]
 pub enum Error {
@@ -8,23 +9,35 @@ pub enum Error {
     LengthNotEnough,
     Encoding,
     // Add customized errors here...
+    #[allow(dead_code)]
     Secp256k1 = 5,
+    #[allow(dead_code)]
     WrongPubkey,
+    #[allow(dead_code)]
     LoadPrefilledData,
+    #[allow(dead_code)]
     RecoverPubkey,
     WrongDataLengthOrFormat,
-    WrongSUDTDiffAmount = 10,
-    WrongDiffCapacity,
-    WrongSUDTInputAmount,
-    WrongOrderType,
-    OrderPriceNotZero,
+    NegativeSudtDifference = 10,
+    NegativeCapacityDifference,
+    InputSudtIsZero,
+    UnknownOrderType,
+    PriceIsZero,
     WrongSwapAmount = 15,
-    TypeHashNotSame,
-    OrderPriceNotSame,
-    LockHashNotSame,
+    TypeHashChanged,
+    PriceChanged,
+    UnknownLock,
     InvalidArgument,
+    #[allow(dead_code)]
     NoInputLockHashMatch = 20,
     WrongMatchInputWitness,
+    PriceExponentOutOfRange, // -100 ~ 100
+    OrderAmountIsZero,
+    UnmatchableOrder,
+    NotASudtCell = 25,
+    NotAFreeCell,
+    UnexpectedVersion,
+    OrderTypeChanged,
 }
 
 impl From<SysError> for Error {
