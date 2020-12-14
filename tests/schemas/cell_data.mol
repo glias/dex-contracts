@@ -1,8 +1,10 @@
 import basic;
 
-struct OrderBookCellDataMol {
+struct AssetOrder {
     sudt_amount:    Uint128,
+    version:        byte,
     order_amount:   Uint128,
-    price:          Uint128,
+    price_effect:   Uint64,
+    price_exponent: byte,
     order_type:     byte,
 }

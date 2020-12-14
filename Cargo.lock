@@ -3024,6 +3024,7 @@ dependencies = [
  "ckb-testtool",
  "ckb-tool",
  "hex",
+ "lazy_static",
  "molecule",
 ]
 
