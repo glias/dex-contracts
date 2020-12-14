@@ -321,12 +321,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     let input = Cell::load(index, Source::Input)?;
     let output = Cell::load(index, Source::Output)?;
 
-    debug!("input {:?}", input);
-    debug!("output {:?}", output);
-
     let input_order = input.to_order()?;
-    debug!("input order {:?}", input_order);
-
     if input_order.order_amount == 0 {
         return Err(Error::OrderAmountIsZero);
     }
@@ -337,6 +332,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         return Err(Error::UnknownLock);
     }
 
+    // PartialFilled
     let state = if output.lock_hash == input.lock_hash {
         if output.type_hash() != input.type_hash() {
             return Err(Error::TypeHashChanged);
@@ -364,6 +360,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         }
 
         OrderState::PartialFilled
+    // Completed
     } else {
         OrderState::Completed
     };
@@ -383,8 +380,6 @@ pub fn validate() -> Result<(), Error> {
     // Find the position of the order book input in the entire inputs to find the output
     // corresponding to the position, and then verify the order data of the input and output
     for index in 0..inputs.len() {
-        debug!("index {}", index);
-
         let input = inputs.get(index).unwrap();
         if order_inputs
             .iter()
