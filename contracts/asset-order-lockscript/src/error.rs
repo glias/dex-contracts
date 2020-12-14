@@ -23,7 +23,7 @@ pub enum Error {
     InputSudtIsZero,
     UnknownOrderType,
     PriceIsZero,
-    WrongSwapAmount = 15,
+    PriceNotMatched = 15,
     TypeHashChanged,
     PriceChanged,
     UnknownLock,

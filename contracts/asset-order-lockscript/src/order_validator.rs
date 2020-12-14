@@ -225,7 +225,7 @@ fn validate_sell_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Re
         if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold * price_exponent.clone()
             > BigUint::from(FEE_DECIMAL) * sudt_got * price_effect.clone()
         {
-            return Err(Error::WrongSwapAmount);
+            return Err(Error::PriceNotMatched);
         }
     } else {
         let price = price_exponent.clone() * price_effect.clone();
@@ -233,7 +233,7 @@ fn validate_sell_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Re
         if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold
             > BigUint::from(FEE_DECIMAL) * sudt_got * price
         {
-            return Err(Error::WrongSwapAmount);
+            return Err(Error::PriceNotMatched);
         }
     }
 
@@ -288,7 +288,7 @@ fn validate_buy_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Res
         if BigUint::from(FEE_DECIMAL) * ckb_bought * price_exponent.clone()
             < BigUint::from(FEE_DECIMAL - FEE) * sudt_paid * price_effect.clone()
         {
-            return Err(Error::WrongSwapAmount);
+            return Err(Error::PriceNotMatched);
         }
     } else {
         let price = price_exponent.clone() * price_effect.clone();
@@ -296,7 +296,7 @@ fn validate_buy_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Res
         if BigUint::from(FEE_DECIMAL) * ckb_bought
             < BigUint::from(FEE_DECIMAL - FEE) * price * sudt_paid
         {
-            return Err(Error::WrongSwapAmount);
+            return Err(Error::PriceNotMatched);
         }
     }
 
