@@ -8,3 +8,9 @@ impl Pack<basic::Uint128> for u128 {
         basic::Uint128::new_unchecked(Bytes::from(self.to_le_bytes().to_vec()))
     }
 }
+
+impl Pack<basic::Uint64> for u64 {
+    fn pack(&self) -> basic::Uint64 {
+        basic::Uint64::new_unchecked(Bytes::from(self.to_le_bytes().to_vec()))
+    }
+}
