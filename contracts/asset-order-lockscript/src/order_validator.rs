@@ -58,15 +58,14 @@ impl Price {
         self.exponent < 0
     }
 
-    fn to_biguint(&self) -> BigUint {
-        let exponent = {
-            let exp = u32::from(self.exponent.abs() as u32);
-            assert!(exp <= 100, "exponent range is -100 to 100");
-            BigUint::from(10u8).pow(exp)
-        };
-        let effect = BigUint::from(self.effect);
+    fn biguint_exponent(&self) -> BigUint {
+        let exp = u32::from(self.exponent.abs() as u32);
+        assert!(exp <= 100, "exponent range is -100 to 100");
+        BigUint::from(10u8).pow(exp)
+    }
 
-        effect * exponent
+    fn biguint_effect(&self) -> BigUint {
+        BigUint::from(self.effect)
     }
 }
 
@@ -220,16 +219,19 @@ fn validate_sell_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Re
     let sudt_got = output_sudt_amount - input_sudt_amount;
 
     let order = input.to_order()?;
-    let price = order.price.to_biguint();
+    let price_exponent = order.price.biguint_exponent();
+    let price_effect = order.price.biguint_effect();
     if order.price.is_exponent_negative() {
-        if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold * price.clone()
-            < BigUint::from(FEE_DECIMAL) * sudt_got
+        if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold * price_exponent.clone()
+            > BigUint::from(FEE_DECIMAL) * sudt_got * price_effect.clone()
         {
             return Err(Error::WrongSwapAmount);
         }
     } else {
+        let price = price_exponent.clone() * price_effect.clone();
+
         if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold
-            < BigUint::from(FEE_DECIMAL) * sudt_got * price.clone()
+            > BigUint::from(FEE_DECIMAL) * sudt_got * price
         {
             return Err(Error::WrongSwapAmount);
         }
@@ -238,7 +240,12 @@ fn validate_sell_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Re
     if state == OrderState::Completed {
         // Only allow 99% filled order which cannot sell more ckb with this price to
         // complete
-        if BigUint::from(order.order_amount - sudt_got) > price {
+        let remained = BigUint::from(order.order_amount - sudt_got);
+        if order.price.is_exponent_negative() {
+            if remained * price_exponent > price_effect {
+                return Err(Error::UnmatchableOrder);
+            }
+        } else if remained > price_exponent * price_effect {
             return Err(Error::UnmatchableOrder);
         }
     }
@@ -275,16 +282,19 @@ fn validate_buy_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Res
     let sudt_paid = input_sudt_amount - output_sudt_amount;
 
     let order = input.to_order()?;
-    let price = order.price.to_biguint();
+    let price_exponent = order.price.biguint_exponent();
+    let price_effect = order.price.biguint_effect();
     if order.price.is_exponent_negative() {
-        if BigUint::from(FEE_DECIMAL) * ckb_bought * price.clone()
-            > BigUint::from(FEE_DECIMAL - FEE) * sudt_paid
+        if BigUint::from(FEE_DECIMAL) * ckb_bought * price_exponent.clone()
+            < BigUint::from(FEE_DECIMAL - FEE) * sudt_paid * price_effect.clone()
         {
             return Err(Error::WrongSwapAmount);
         }
     } else {
+        let price = price_exponent.clone() * price_effect.clone();
+
         if BigUint::from(FEE_DECIMAL) * ckb_bought
-            > BigUint::from(FEE_DECIMAL - FEE) * price.clone() * sudt_paid
+            < BigUint::from(FEE_DECIMAL - FEE) * price * sudt_paid
         {
             return Err(Error::WrongSwapAmount);
         }
@@ -293,7 +303,12 @@ fn validate_buy_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Res
     if state == OrderState::Completed {
         // Only allow partial filled order which cannot buy more ckb with this price to
         // complete
-        if BigUint::from(order.order_amount - u128::from(ckb_bought)) > price {
+        let remained = BigUint::from(order.order_amount - u128::from(ckb_bought));
+        if order.price.is_exponent_negative() {
+            if remained * price_exponent > price_effect {
+                return Err(Error::UnmatchableOrder);
+            }
+        } else if remained > price_exponent * price_effect {
             return Err(Error::UnmatchableOrder);
         }
     }
