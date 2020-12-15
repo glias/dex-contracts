@@ -27,7 +27,7 @@ pub enum Error {
     TypeHashChanged,
     PriceChanged,
     UnknownLock,
-    InvalidArgument,
+    LockArgsNotAHash,
     #[allow(dead_code)]
     NoInputLockHashMatch = 20,
     WrongMatchInputWitness,

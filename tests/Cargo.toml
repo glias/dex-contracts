@@ -12,3 +12,4 @@ ckb-system-scripts = "0.5"
 hex = "0.4"
 molecule = "0.6"
 lazy_static = "1.4"
+dyn-lock = { version = "0.1", features = ["include_locks"] }

@@ -3,8 +3,8 @@
 use super::basic::*;
 use molecule::prelude::*;
 #[derive(Clone)]
-pub struct OrderBookCellDataMol(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for OrderBookCellDataMol {
+pub struct AssetOrder(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for AssetOrder {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -13,62 +13,72 @@ impl ::core::fmt::LowerHex for OrderBookCellDataMol {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for OrderBookCellDataMol {
+impl ::core::fmt::Debug for AssetOrder {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for OrderBookCellDataMol {
+impl ::core::fmt::Display for AssetOrder {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "sudt_amount", self.sudt_amount())?;
+        write!(f, ", {}: {}", "version", self.version())?;
         write!(f, ", {}: {}", "order_amount", self.order_amount())?;
-        write!(f, ", {}: {}", "price", self.price())?;
+        write!(f, ", {}: {}", "price_effect", self.price_effect())?;
+        write!(f, ", {}: {}", "price_exponent", self.price_exponent())?;
         write!(f, ", {}: {}", "order_type", self.order_type())?;
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for OrderBookCellDataMol {
+impl ::core::default::Default for AssetOrder {
     fn default() -> Self {
         let v: Vec<u8> = vec![
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        OrderBookCellDataMol::new_unchecked(v.into())
+        AssetOrder::new_unchecked(v.into())
     }
 }
-impl OrderBookCellDataMol {
-    pub const FIELD_COUNT: usize = 4;
-    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
-    pub const TOTAL_SIZE: usize = 49;
+impl AssetOrder {
+    pub const FIELD_COUNT: usize = 6;
+    pub const FIELD_SIZES: [usize; 6] = [16, 1, 16, 8, 1, 1];
+    pub const TOTAL_SIZE: usize = 43;
 
     pub fn sudt_amount(&self) -> Uint128 {
         Uint128::new_unchecked(self.0.slice(0..16))
     }
 
-    pub fn order_amount(&self) -> Uint128 {
-        Uint128::new_unchecked(self.0.slice(16..32))
+    pub fn version(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(16..17))
     }
 
-    pub fn price(&self) -> Uint128 {
-        Uint128::new_unchecked(self.0.slice(32..48))
+    pub fn order_amount(&self) -> Uint128 {
+        Uint128::new_unchecked(self.0.slice(17..33))
+    }
+
+    pub fn price_effect(&self) -> Uint64 {
+        Uint64::new_unchecked(self.0.slice(33..41))
+    }
+
+    pub fn price_exponent(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(41..42))
     }
 
     pub fn order_type(&self) -> Byte {
-        Byte::new_unchecked(self.0.slice(48..49))
+        Byte::new_unchecked(self.0.slice(42..43))
     }
 
-    pub fn as_reader<'r>(&'r self) -> OrderBookCellDataMolReader<'r> {
-        OrderBookCellDataMolReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> AssetOrderReader<'r> {
+        AssetOrderReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for OrderBookCellDataMol {
-    type Builder = OrderBookCellDataMolBuilder;
+impl molecule::prelude::Entity for AssetOrder {
+    type Builder = AssetOrderBuilder;
 
-    const NAME: &'static str = "OrderBookCellDataMol";
+    const NAME: &'static str = "AssetOrder";
 
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        OrderBookCellDataMol(data)
+        AssetOrder(data)
     }
 
     fn as_bytes(&self) -> molecule::bytes::Bytes {
@@ -80,11 +90,11 @@ impl molecule::prelude::Entity for OrderBookCellDataMol {
     }
 
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        OrderBookCellDataMolReader::from_slice(slice).map(|reader| reader.to_entity())
+        AssetOrderReader::from_slice(slice).map(|reader| reader.to_entity())
     }
 
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        OrderBookCellDataMolReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        AssetOrderReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
 
     fn new_builder() -> Self::Builder {
@@ -94,14 +104,16 @@ impl molecule::prelude::Entity for OrderBookCellDataMol {
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
             .sudt_amount(self.sudt_amount())
+            .version(self.version())
             .order_amount(self.order_amount())
-            .price(self.price())
+            .price_effect(self.price_effect())
+            .price_exponent(self.price_exponent())
             .order_type(self.order_type())
     }
 }
 #[derive(Clone, Copy)]
-pub struct OrderBookCellDataMolReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for OrderBookCellDataMolReader<'r> {
+pub struct AssetOrderReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for AssetOrderReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -110,53 +122,63 @@ impl<'r> ::core::fmt::LowerHex for OrderBookCellDataMolReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for OrderBookCellDataMolReader<'r> {
+impl<'r> ::core::fmt::Debug for AssetOrderReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for OrderBookCellDataMolReader<'r> {
+impl<'r> ::core::fmt::Display for AssetOrderReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "sudt_amount", self.sudt_amount())?;
+        write!(f, ", {}: {}", "version", self.version())?;
         write!(f, ", {}: {}", "order_amount", self.order_amount())?;
-        write!(f, ", {}: {}", "price", self.price())?;
+        write!(f, ", {}: {}", "price_effect", self.price_effect())?;
+        write!(f, ", {}: {}", "price_exponent", self.price_exponent())?;
         write!(f, ", {}: {}", "order_type", self.order_type())?;
         write!(f, " }}")
     }
 }
-impl<'r> OrderBookCellDataMolReader<'r> {
-    pub const FIELD_COUNT: usize = 4;
-    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
-    pub const TOTAL_SIZE: usize = 49;
+impl<'r> AssetOrderReader<'r> {
+    pub const FIELD_COUNT: usize = 6;
+    pub const FIELD_SIZES: [usize; 6] = [16, 1, 16, 8, 1, 1];
+    pub const TOTAL_SIZE: usize = 43;
 
     pub fn sudt_amount(&self) -> Uint128Reader<'r> {
         Uint128Reader::new_unchecked(&self.as_slice()[0..16])
     }
 
-    pub fn order_amount(&self) -> Uint128Reader<'r> {
-        Uint128Reader::new_unchecked(&self.as_slice()[16..32])
+    pub fn version(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[16..17])
     }
 
-    pub fn price(&self) -> Uint128Reader<'r> {
-        Uint128Reader::new_unchecked(&self.as_slice()[32..48])
+    pub fn order_amount(&self) -> Uint128Reader<'r> {
+        Uint128Reader::new_unchecked(&self.as_slice()[17..33])
+    }
+
+    pub fn price_effect(&self) -> Uint64Reader<'r> {
+        Uint64Reader::new_unchecked(&self.as_slice()[33..41])
+    }
+
+    pub fn price_exponent(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[41..42])
     }
 
     pub fn order_type(&self) -> ByteReader<'r> {
-        ByteReader::new_unchecked(&self.as_slice()[48..49])
+        ByteReader::new_unchecked(&self.as_slice()[42..43])
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for OrderBookCellDataMolReader<'r> {
-    type Entity = OrderBookCellDataMol;
+impl<'r> molecule::prelude::Reader<'r> for AssetOrderReader<'r> {
+    type Entity = AssetOrder;
 
-    const NAME: &'static str = "OrderBookCellDataMolReader";
+    const NAME: &'static str = "AssetOrderReader";
 
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
 
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        OrderBookCellDataMolReader(slice)
+        AssetOrderReader(slice)
     }
 
     fn as_slice(&self) -> &'r [u8] {
@@ -173,19 +195,26 @@ impl<'r> molecule::prelude::Reader<'r> for OrderBookCellDataMolReader<'r> {
     }
 }
 #[derive(Debug, Default)]
-pub struct OrderBookCellDataMolBuilder {
-    pub(crate) sudt_amount:  Uint128,
-    pub(crate) order_amount: Uint128,
-    pub(crate) price:        Uint128,
-    pub(crate) order_type:   Byte,
+pub struct AssetOrderBuilder {
+    pub(crate) sudt_amount:    Uint128,
+    pub(crate) version:        Byte,
+    pub(crate) order_amount:   Uint128,
+    pub(crate) price_effect:   Uint64,
+    pub(crate) price_exponent: Byte,
+    pub(crate) order_type:     Byte,
 }
-impl OrderBookCellDataMolBuilder {
-    pub const FIELD_COUNT: usize = 4;
-    pub const FIELD_SIZES: [usize; 4] = [16, 16, 16, 1];
-    pub const TOTAL_SIZE: usize = 49;
+impl AssetOrderBuilder {
+    pub const FIELD_COUNT: usize = 6;
+    pub const FIELD_SIZES: [usize; 6] = [16, 1, 16, 8, 1, 1];
+    pub const TOTAL_SIZE: usize = 43;
 
     pub fn sudt_amount(mut self, v: Uint128) -> Self {
         self.sudt_amount = v;
+        self
+    }
+
+    pub fn version(mut self, v: Byte) -> Self {
+        self.version = v;
         self
     }
 
@@ -194,8 +223,13 @@ impl OrderBookCellDataMolBuilder {
         self
     }
 
-    pub fn price(mut self, v: Uint128) -> Self {
-        self.price = v;
+    pub fn price_effect(mut self, v: Uint64) -> Self {
+        self.price_effect = v;
+        self
+    }
+
+    pub fn price_exponent(mut self, v: Byte) -> Self {
+        self.price_exponent = v;
         self
     }
 
@@ -204,10 +238,10 @@ impl OrderBookCellDataMolBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for OrderBookCellDataMolBuilder {
-    type Entity = OrderBookCellDataMol;
+impl molecule::prelude::Builder for AssetOrderBuilder {
+    type Entity = AssetOrder;
 
-    const NAME: &'static str = "OrderBookCellDataMolBuilder";
+    const NAME: &'static str = "AssetOrderBuilder";
 
     fn expected_length(&self) -> usize {
         Self::TOTAL_SIZE
@@ -215,8 +249,10 @@ impl molecule::prelude::Builder for OrderBookCellDataMolBuilder {
 
     fn write<W: ::molecule::io::Write>(&self, writer: &mut W) -> ::molecule::io::Result<()> {
         writer.write_all(self.sudt_amount.as_slice())?;
+        writer.write_all(self.version.as_slice())?;
         writer.write_all(self.order_amount.as_slice())?;
-        writer.write_all(self.price.as_slice())?;
+        writer.write_all(self.price_effect.as_slice())?;
+        writer.write_all(self.price_exponent.as_slice())?;
         writer.write_all(self.order_type.as_slice())?;
         Ok(())
     }
@@ -225,6 +261,6 @@ impl molecule::prelude::Builder for OrderBookCellDataMolBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        OrderBookCellDataMol::new_unchecked(inner.into())
+        AssetOrder::new_unchecked(inner.into())
     }
 }

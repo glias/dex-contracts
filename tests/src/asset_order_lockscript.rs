@@ -8,6 +8,8 @@ use ckb_tool::ckb_script::ScriptError;
 use ckb_tool::ckb_types::core::{Capacity, TransactionBuilder, TransactionView};
 use ckb_tool::ckb_types::packed::{self, *};
 use ckb_tool::ckb_types::{bytes::Bytes, prelude::*, H256};
+use dyn_lock::locks::BUNDLED_CELL as BUNDLED;
+use dyn_lock::locks::CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL_ACPL;
 use generated::cell_data::AssetOrder;
 use molecule::prelude::*;
 
