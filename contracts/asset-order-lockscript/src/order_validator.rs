@@ -20,6 +20,7 @@ const FEE_DECIMAL: u128 = 1000;
 // The cell data length of order book is fixed at 41 bytes
 const ORDER_DATA_LEN: usize = 43;
 const PRICE_BYTES_LEN: usize = 9;
+const VERSION: u8 = 1;
 
 #[derive(Debug)]
 struct Price {
@@ -135,7 +136,7 @@ impl TryFrom<&[u8]> for Order {
             type_:        OrderType::try_from(u8::from_le_bytes(order_type_buf))?,
         };
 
-        if order.version != 1 {
+        if order.version != VERSION {
             return Err(Error::UnexpectedVersion);
         }
 
@@ -317,7 +318,6 @@ fn validate_buy_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Res
 }
 
 fn validate_order_cells(index: usize) -> Result<(), Error> {
-    // TODO: cancel order
     let input = Cell::load(index, Source::Input)?;
     let output = Cell::load(index, Source::Output)?;
 

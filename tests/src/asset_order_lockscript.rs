@@ -1,15 +1,13 @@
 use super::*;
 use ckb_system_scripts::BUNDLED_CELL;
 use ckb_testtool::{builtin::ALWAYS_SUCCESS, context::Context};
-use ckb_tool::ckb_crypto::secp::{Generator, Privkey};
+use ckb_tool::ckb_crypto::secp::{Generator, Privkey, Pubkey};
 use ckb_tool::ckb_error::assert_error_eq;
 use ckb_tool::ckb_hash::{blake2b_256, new_blake2b};
 use ckb_tool::ckb_script::ScriptError;
 use ckb_tool::ckb_types::core::{Capacity, TransactionBuilder, TransactionView};
 use ckb_tool::ckb_types::packed::{self, *};
 use ckb_tool::ckb_types::{bytes::Bytes, prelude::*, H256};
-use dyn_lock::locks::BUNDLED_CELL as BUNDLED;
-use dyn_lock::locks::CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL_ACPL;
 use generated::cell_data::AssetOrder;
 use molecule::prelude::*;
 
@@ -159,6 +157,7 @@ impl FreeCell {
 
 enum OrderInput {
     Order {
+        cell_deps: Option<Vec<CellDep>>,
         cell:      OrderCell,
         lock_args: Option<Bytes>,
         witness:   Option<Bytes>,
@@ -174,6 +173,7 @@ enum OrderInput {
 impl OrderInput {
     pub fn new_order(cell: OrderCell) -> Self {
         OrderInput::Order {
+            cell_deps: None,
             cell,
             lock_args: None,
             witness: None,
@@ -233,6 +233,7 @@ fn build_tx(
     for (idx, order_input) in input_orders.into_iter().enumerate() {
         match order_input {
             OrderInput::Order {
+                cell_deps: opt_cell_deps,
                 cell,
                 lock_args: opt_args,
                 witness: opt_witness,
@@ -259,6 +260,7 @@ fn build_tx(
                     .previous_output(input_out_point)
                     .build();
 
+                cell_deps.extend(opt_cell_deps.unwrap_or_default());
                 inputs.push(input);
                 witnesses.push(opt_witness.unwrap_or_default());
             }
@@ -645,6 +647,67 @@ fn test_ckb_sudt_order_price_changed() {
 }
 
 #[test]
+fn test_directly_cancel_order_using_signature_witness() {
+    use ckb_dyn_lock::locks::binary::{self, Binary};
+    use ckb_dyn_lock::test_tool;
+
+    // generate key pair
+    let privkey = Generator::random_privkey();
+    let pubkey = privkey.pubkey().expect("pubkey");
+    let eth_pubkey = eth_pubkey(pubkey);
+
+    let mut context = Context::default();
+
+    // Deploy dependencies
+    let secp256k1_data_bin = binary::get(Binary::Secp256k1Data);
+    let secp256k1_data_out_point = context.deploy_cell(secp256k1_data_bin.to_vec().into());
+    let secp256k1_data_dep = CellDep::new_builder()
+        .out_point(secp256k1_data_out_point)
+        .build();
+
+    let secp256k1_keccak256_bin = binary::get(Binary::Secp256k1Keccak256SighashAllDual);
+    let secp256k1_keccak256_out_point =
+        context.deploy_cell(secp256k1_keccak256_bin.to_vec().into());
+    let secp256k1_keccak256_dep = CellDep::new_builder()
+        .out_point(secp256k1_keccak256_out_point.clone())
+        .build();
+
+    let keccak256_lock_script = context
+        .build_script(&secp256k1_keccak256_out_point, eth_pubkey)
+        .expect("build secp256k1 keccak256 lock script");
+
+    let order_input = {
+        let cell = OrderCell::builder()
+            .capacity_dec(1000, 8)
+            .sudt_amount(0)
+            .order_amount_dec(50, 8)
+            .price(5, 0)
+            .order_type(OrderType::SellCKB)
+            .build();
+
+        let witness = WitnessArgs::new_builder()
+            .input_type(Some(keccak256_lock_script.as_bytes()).pack())
+            .build();
+
+        OrderInput::Order {
+            cell_deps: Some(vec![secp256k1_data_dep, secp256k1_keccak256_dep]),
+            cell,
+            lock_args: Some(keccak256_lock_script.calc_script_hash().as_bytes()),
+            witness: Some(witness.as_bytes()),
+        }
+    };
+
+    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+    let tx = build_tx(&mut context, vec![order_input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let tx = test_tool::secp256k1_keccak256::sign_tx(tx, &privkey);
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("pass verification");
+}
+
+#[test]
 fn test_cancel_order_use_secp256k1_lockscript() {
     // generate key pair
     let privkey = Generator::random_privkey();
@@ -657,7 +720,7 @@ fn test_cancel_order_use_secp256k1_lockscript() {
         .build_script(&secp256k1_lock_out_point, pubkey_hash.into())
         .expect("secp256k1 lock script");
 
-    let unlock_input = OrderInput::AnyUnlock {
+    let cancel_input = OrderInput::AnyUnlock {
         cell_deps: Some(secp256k1_lock_deps),
         cell:      FreeCell::new(100_00_000_000),
         lock:      secp256k1_lock_script.clone(),
@@ -674,6 +737,7 @@ fn test_cancel_order_use_secp256k1_lockscript() {
             .build();
 
         OrderInput::Order {
+            cell_deps: None,
             cell,
             lock_args: Some(secp256k1_lock_script.calc_script_hash().as_bytes()),
             witness: None,
@@ -681,7 +745,7 @@ fn test_cancel_order_use_secp256k1_lockscript() {
     };
 
     let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
-    let tx = build_tx(&mut context, vec![unlock_input, order_input], vec![output]);
+    let tx = build_tx(&mut context, vec![cancel_input, order_input], vec![output]);
     let tx = context.complete_tx(tx);
 
     let tx = Secp256k1Lock::sign_tx(tx, &privkey);
@@ -704,7 +768,7 @@ fn test_cancel_order_use_secp256k1_lockscript_with_wrong_key() {
         .build_script(&secp256k1_lock_out_point, pubkey_hash.into())
         .expect("secp256k1 lock script");
 
-    let unlock_input = OrderInput::AnyUnlock {
+    let cancel_input = OrderInput::AnyUnlock {
         cell_deps: Some(secp256k1_lock_deps),
         cell:      FreeCell::new(100_00_000_000),
         lock:      secp256k1_lock_script.clone(),
@@ -721,6 +785,7 @@ fn test_cancel_order_use_secp256k1_lockscript_with_wrong_key() {
             .build();
 
         OrderInput::Order {
+            cell_deps: None,
             cell,
             lock_args: Some(secp256k1_lock_script.calc_script_hash().as_bytes()),
             witness: None,
@@ -728,7 +793,7 @@ fn test_cancel_order_use_secp256k1_lockscript_with_wrong_key() {
     };
 
     let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
-    let tx = build_tx(&mut context, vec![unlock_input, order_input], vec![output]);
+    let tx = build_tx(&mut context, vec![cancel_input, order_input], vec![output]);
     let tx = context.complete_tx(tx);
 
     let tx = Secp256k1Lock::sign_tx(tx, &wrong_privkey);
@@ -794,6 +859,7 @@ impl Secp256k1Lock {
         let sig = key.sign_recoverable(&message).expect("sign");
         signed_witnesses.push(
             witness
+                .clone()
                 .as_builder()
                 .lock(Some(Bytes::from(sig.serialize())).pack())
                 .build()
@@ -814,4 +880,20 @@ fn blake160(data: &[u8]) -> [u8; 20] {
     let hash = blake2b_256(data);
     buf.clone_from_slice(&hash[..20]);
     buf
+}
+
+fn eth_pubkey(pubkey: Pubkey) -> Bytes {
+    use sha3::{Digest, Keccak256};
+
+    let prefix_key: [u8; 65] = {
+        let mut temp = [4u8; 65];
+        temp[1..65].copy_from_slice(pubkey.as_bytes());
+        temp
+    };
+    let pubkey = secp256k1::key::PublicKey::from_slice(&prefix_key).unwrap();
+    let message = Vec::from(&pubkey.serialize_uncompressed()[1..]);
+
+    let mut hasher = Keccak256::default();
+    hasher.input(&message);
+    Bytes::copy_from_slice(&hasher.result()[12..32])
 }

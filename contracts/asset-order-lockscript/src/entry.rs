@@ -27,11 +27,20 @@
 // - Provide another input cell, it's lock hash is equal to order's lock args. And that input's
 //   witness args must not be empty to be compatible with anyone can pay lock.
 
+use core::convert::TryFrom;
 use core::result::Result;
 
+use ckb_dyn_lock::locks::{
+    CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL, CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL_DUAL,
+};
+use ckb_dyn_lock::DynLock;
+use ckb_std::ckb_constants::{CellField, Source};
+use ckb_std::ckb_types::packed::{Byte, Script, ScriptReader, WitnessArgs};
 use ckb_std::ckb_types::{bytes::Bytes, prelude::*};
+use ckb_std::dynamic_loading::CKBDLContext;
+use ckb_std::error::SysError;
 use ckb_std::high_level::{load_cell, load_script, load_witness_args, QueryIter};
-use ckb_std::{ckb_constants::Source, default_alloc};
+use ckb_std::{default_alloc, syscalls};
 use share::hash::blake2b_256;
 
 use crate::error::Error;
@@ -41,31 +50,119 @@ default_alloc!(4 * 1024, 2048 * 1024, 64);
 
 pub fn main() -> Result<(), Error> {
     let script = load_script()?;
-    let args: Bytes = script.args().unpack();
+    let user_lock_hash: Bytes = script.args().unpack();
 
-    // The length of args(lock hash) must be 32 bytes
-    if args.len() != 32 {
-        return Err(Error::LockArgsNotAHash);
+    // The length of user lock hash must be 32 bytes
+    if user_lock_hash.len() != 32 {
+        return Err(Error::WrongUserLockHashLength);
     }
 
     // Check cancellation
-    // First we check whether there's a witness args to cancel directly
-    let has_witness = QueryIter::new()
+    // Firstly, we check whether there's a witness to cancel directly
+    if let Ok(witness_args) = load_witness_args(0, Source::GroupInput) {
+        return validate_witness(witness_args, user_lock_hash);
+    }
 
-    // Check whether there is an input's lock hash equal to this order lock args.
-    // If it exists, verify it according to the process of withdrawal or withdrawal,
+    // Secondly, check whether there is an input's lock hash equal to this order lock args(user
+    // lock hash). If it exists, verify it according to the process of cancellation.
     // if it does not exist, verify it according to the process of matching transaction.
     let input_position = QueryIter::new(load_cell, Source::Input)
-        .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &args[..]);
+        .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &user_lock_hash[..]);
 
     match input_position {
         None => return crate::order_validator::validate(),
-        // If it is an order cancellation or withdrawal operation, inputs must contain an input
-        // whose witness is not empty, and the lock hash of this input is equal to order
-        // book cell lock args.
-        Some(position) => match load_witness_args(position, Source::Input) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(Error::WrongMatchInputWitness),
-        },
+        // Since anyone can pay lock dones't require signature to unlock, we must make
+        // sure that witness args isn't empty.
+        Some(position) if load_witness_args(position, Source::Input).is_ok() => Ok(()),
+        _ => Err(Error::WrongMatchInputWitness),
     }
+}
+
+fn validate_witness(witness_args: WitnessArgs, user_lock_hash: Bytes) -> Result<(), Error> {
+    // TODO: move user_lock_bytes into lock field
+    let user_lock_bytes: Bytes = {
+        let opt_bytes = witness_args.input_type();
+        let user_lock = opt_bytes.to_opt().ok_or_else(|| Error::UserLockNotFound)?;
+        user_lock.unpack()
+    };
+    ScriptReader::verify(&user_lock_bytes[..], false).map_err(|_| Error::UserLockScriptEncoding)?;
+
+    let user_lock = Script::new_unchecked(user_lock_bytes);
+    if &blake2b_256(user_lock.as_slice())[..] != &user_lock_hash[..] {
+        return Err(Error::UserLockHashNotMatch);
+    }
+
+    let hash_type = HashType::try_from(user_lock.hash_type())?;
+    let code_hash = user_lock.code_hash();
+    let data_hash = match find_cell_dep(code_hash.unpack(), hash_type)? {
+        Some(data_hash) => data_hash,
+        // FIXME: Our forked pw-lock to verify signature, only personal hash is supported
+        None if code_hash.unpack() == CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL => {
+            let alternative = CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL_DUAL;
+            match find_cell_dep(alternative, HashType::Data)? {
+                Some(data_hash) => data_hash,
+                None => return Err(Error::UserLockCellDepNotFound),
+            }
+        }
+        _ => return Err(Error::UserLockCellDepNotFound),
+    };
+
+    let mut ctx = unsafe { CKBDLContext::<[u8; 128 * 1024]>::new() };
+    let dyn_lock = DynLock::load(&mut ctx, &data_hash)?;
+
+    let lock_args: Bytes = user_lock.args().unpack();
+    dyn_lock.validate(&lock_args, lock_args.len() as u64)?;
+
+    Ok(())
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum HashType {
+    Type,
+    Data,
+}
+
+impl TryFrom<Byte> for HashType {
+    type Error = Error;
+
+    fn try_from(byte: Byte) -> Result<Self, Error> {
+        let type_num: u8 = byte.into();
+        match type_num {
+            0 => Ok(HashType::Data),
+            1 => Ok(HashType::Type),
+            _ => Err(Error::UnknownUserLockHashType),
+        }
+    }
+}
+
+type DataHash = [u8; 32];
+
+fn find_cell_dep(hash: [u8; 32], hash_type: HashType) -> Result<Option<DataHash>, Error> {
+    let cell_field = match hash_type {
+        HashType::Data => CellField::DataHash,
+        HashType::Type => CellField::TypeHash,
+    };
+
+    let mut buf = [0u8; 32];
+    for i in 0.. {
+        match syscalls::load_cell_by_field(&mut buf, 0, i, Source::CellDep, cell_field) {
+            Ok(_) => (),
+            Err(SysError::IndexOutOfBound) => break,
+            Err(err) => return Err(err.into()),
+        };
+
+        if hash != &buf[..] {
+            continue;
+        }
+
+        return match hash_type {
+            HashType::Type => {
+                syscalls::load_cell_by_field(&mut buf, 0, i, Source::CellDep, CellField::DataHash)?;
+                Ok(Some(buf))
+            }
+            HashType::Data => Ok(Some(hash)),
+        };
+    }
+
+    Ok(None)
 }
