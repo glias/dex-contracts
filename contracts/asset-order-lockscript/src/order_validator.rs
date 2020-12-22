@@ -22,6 +22,27 @@ const ORDER_DATA_LEN: usize = 43;
 const PRICE_BYTES_LEN: usize = 9;
 const VERSION: u8 = 1;
 
+pub fn validate() -> Result<(), Error> {
+    // Find inputs in current group
+    let orders = QueryIter::new(load_input, Source::GroupInput).collect::<Vec<_>>();
+    // Find all inputs in the current transaction
+    let inputs = QueryIter::new(load_input, Source::Input).collect::<Vec<_>>();
+
+    // Find the position of the order book input in the entire inputs to find the output
+    // corresponding to the position, and then verify the order data of the input and output
+    for index in 0..inputs.len() {
+        let input = inputs.get(index).unwrap().as_slice();
+        if orders.iter().any(|order| order.as_slice() == input) {
+            match validate_order_cells(index) {
+                Ok(_) => continue,
+                Err(err) => return Err(err),
+            }
+        }
+    }
+
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Price {
     effect:   u64,
@@ -78,6 +99,7 @@ impl PartialEq for Price {
 
 impl Eq for Price {}
 
+#[repr(u8)]
 #[derive(Debug, PartialEq, Eq)]
 enum OrderType {
     SellCKB = 0,
@@ -192,20 +214,11 @@ impl Cell {
 #[derive(Debug, PartialEq, Eq)]
 enum OrderState {
     PartialFilled,
-    Completed,
+    SellCKBCompleted,
+    BuyCKBCompleted,
 }
 
-fn validate_sell_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Result<(), Error> {
-    if state == OrderState::Completed {
-        if output.type_hash() != input.type_hash() {
-            return Err(Error::TypeHashChanged);
-        }
-
-        if output.data.len() < 16 {
-            return Err(Error::NotASudtCell);
-        }
-    }
-
+fn validate_sell_ckb_order_price(input: &Cell, output: &Cell) -> Result<(), Error> {
     if output.capacity > input.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
@@ -238,9 +251,9 @@ fn validate_sell_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Re
         }
     }
 
-    if state == OrderState::Completed {
-        // Only allow 99% filled order which cannot sell more ckb with this price to
-        // complete
+    if output.lock_hash == input.lock_script.args().raw_data().as_ref() {
+        // Only allow 99% filled order to complete when it can't sell more
+        // ckb with this price.
         let remained = BigUint::from(order.order_amount - sudt_got);
         if order.price.is_exponent_negative() {
             if remained * price_exponent > price_effect {
@@ -254,17 +267,7 @@ fn validate_sell_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Re
     Ok(())
 }
 
-fn validate_buy_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Result<(), Error> {
-    if state == OrderState::Completed {
-        match output.type_hash()? {
-            // Allow 99% filled order to complete, if it cannot buy more ckb with given
-            // order price. We should have a sudt cell here.
-            Some(_sudt_type) if output.data.len() < 16 => return Err(Error::NotASudtCell),
-            None if output.data.len() != 0 => return Err(Error::NotAFreeCell),
-            _ => (),
-        }
-    }
-
+fn validate_buy_ckb_order_price(input: &Cell, output: &Cell) -> Result<(), Error> {
     if input.capacity > output.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
@@ -301,9 +304,9 @@ fn validate_buy_ckb_order(input: &Cell, output: &Cell, state: OrderState) -> Res
         }
     }
 
-    if state == OrderState::Completed {
-        // Only allow partial filled order which cannot buy more ckb with this price to
-        // complete
+    if output.lock_hash == input.lock_script.args().raw_data().as_ref() {
+        // Only allow 99% filled order to complete when it can't buy more ckb
+        // with this price.
         let remained = BigUint::from(order.order_amount - u128::from(ckb_bought));
         if order.price.is_exponent_negative() {
             if remained * price_exponent > price_effect {
@@ -326,14 +329,18 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         return Err(Error::OrderAmountIsZero);
     }
 
-    if output.lock_hash != input.lock_hash
-        && output.lock_hash != input.lock_script.args().raw_data().as_ref()
-    {
+    let order_state = if output.lock_hash == input.lock_hash {
+        OrderState::PartialFilled
+    } else if output.lock_hash == input.lock_script.args().raw_data().as_ref() {
+        match input_order.type_ {
+            OrderType::SellCKB => OrderState::SellCKBCompleted,
+            OrderType::BuyCKB => OrderState::BuyCKBCompleted,
+        }
+    } else {
         return Err(Error::UnknownLock);
-    }
+    };
 
-    // PartialFilled
-    let state = if output.lock_hash == input.lock_hash {
+    if order_state == OrderState::PartialFilled {
         if output.type_hash() != input.type_hash() {
             return Err(Error::TypeHashChanged);
         }
@@ -358,39 +365,30 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         if output_order.order_amount == 0 {
             return Err(Error::OrderAmountIsZero);
         }
-
-        OrderState::PartialFilled
-    // Completed
-    } else {
-        OrderState::Completed
-    };
-
-    match input_order.type_ {
-        OrderType::SellCKB => validate_sell_ckb_order(&input, &output, state),
-        OrderType::BuyCKB => validate_buy_ckb_order(&input, &output, state),
     }
-}
 
-pub fn validate() -> Result<(), Error> {
-    // Find inputs in current group
-    let order_inputs = QueryIter::new(load_input, Source::GroupInput).collect::<Vec<_>>();
-    // Find all inputs in the current transaction
-    let inputs = QueryIter::new(load_input, Source::Input).collect::<Vec<_>>();
+    if order_state == OrderState::SellCKBCompleted {
+        if output.type_hash() != input.type_hash() {
+            return Err(Error::TypeHashChanged);
+        }
 
-    // Find the position of the order book input in the entire inputs to find the output
-    // corresponding to the position, and then verify the order data of the input and output
-    for index in 0..inputs.len() {
-        let input = inputs.get(index).unwrap();
-        if order_inputs
-            .iter()
-            .any(|order_input| order_input.as_slice() == input.as_slice())
-        {
-            match validate_order_cells(index) {
-                Ok(_) => continue,
-                Err(err) => return Err(err),
-            }
+        if output.data.len() < 16 {
+            return Err(Error::NotASudtCell);
         }
     }
 
-    Ok(())
+    if order_state == OrderState::BuyCKBCompleted {
+        match output.type_hash()? {
+            // If we can't buy more ckb with given order price, we allow this order to complete.
+            // We should have a sudt cell here.
+            Some(_sudt_type) if output.data.len() < 16 => return Err(Error::NotASudtCell),
+            None if output.data.len() != 0 => return Err(Error::NotAFreeCell),
+            _ => (),
+        }
+    }
+
+    match input_order.type_ {
+        OrderType::SellCKB => validate_sell_ckb_order_price(&input, &output),
+        OrderType::BuyCKB => validate_buy_ckb_order_price(&input, &output),
+    }
 }
