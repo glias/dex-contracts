@@ -56,11 +56,6 @@ struct OrderCellBuilder {
 }
 
 impl OrderCellBuilder {
-    fn capacity(mut self, capacity: u64) -> Self {
-        self.capacity = capacity;
-        self
-    }
-
     fn capacity_dec(mut self, capacity: u64, decimal: u32) -> Self {
         self.capacity = capacity * 10u64.pow(decimal);
         self
@@ -73,11 +68,6 @@ impl OrderCellBuilder {
 
     fn sudt_amount_dec(mut self, sudt_amount: u128, decimal: u32) -> Self {
         self.sudt_amount = sudt_amount * 10u128.pow(decimal);
-        self
-    }
-
-    fn order_amount(mut self, order_amount: u128) -> Self {
-        self.order_amount = order_amount;
         self
     }
 
@@ -123,6 +113,7 @@ struct SudtCell {
 }
 
 impl SudtCell {
+    #[allow(dead_code)]
     fn new(capacity: u64, amount: u128) -> Self {
         let sudt_data: Uint128 = amount.pack();
 
@@ -356,32 +347,32 @@ fn build_test_context(
 fn test_ckb_sudt_two_orders_one_partial_filled_and_one_completed() {
     let input0 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity(2000_00_000_000)          // 2000 ckb
-        .sudt_amount(50_00_000_000)         // 50 sudt
-        .order_amount(150_00_000_000)       // 150 sudt
-        .price(5, 0)                        // 5
+        .capacity_dec(2000, 8)          // 2000 ckb
+        .sudt_amount_dec(50, 8)         // 50 sudt
+        .order_amount_dec(150, 8)       // 150 sudt
+        .price(5, 0)                    // 5
         .order_type(OrderType::SellCKB)
         .build(),
     );
 
     let input1 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity(800_00_000_000)           // 800 ckb
-        .sudt_amount(500_00_000_000)        // 500 sudt
-        .order_amount(1000_00_000_000)      // 1000 ckb
-        .price(5, 0)                        // 5
+        .capacity_dec(800, 8)           // 800 ckb
+        .sudt_amount_dec(500, 8)        // 500 sudt
+        .order_amount_dec(1000, 8)      // 1000 ckb
+        .price(5, 0)                    // 5
         .order_type(OrderType::BuyCKB)
         .build(),
     );
 
     // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
     // output2 capacity = 800 + 750 = 1550
-    let output0 = OrderOutput::Sudt(SudtCell::new(1247_75_000_000, 200_00_000_000));
+    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
     let output1 = OrderOutput::PartialFilledOrder(
         OrderCell::builder()
-            .capacity(1550_00_000_000)
-            .sudt_amount(34955_000_000)
-            .order_amount(250_00_000_000)
+            .capacity_dec(1550, 8)
+            .sudt_amount_dec(34955, 6)
+            .order_amount_dec(250, 8)
             .price(5, 0)
             .order_type(OrderType::BuyCKB)
             .build(),
