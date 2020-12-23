@@ -33,7 +33,7 @@ pub enum Error {
     WrongMatchInputWitness,
     PriceExponentOutOfRange, // -100 ~ 100
     OrderAmountIsZero,
-    UnmatchableOrder,
+    CompleteMatchableOrder,
     NotASudtCell = 25,
     NotAFreeCell,
     UnexpectedVersion,

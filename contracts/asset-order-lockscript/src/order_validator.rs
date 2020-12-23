@@ -257,10 +257,10 @@ fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resu
         let remained = BigUint::from(order.order_amount - sudt_got);
         if order.price.is_exponent_negative() {
             if remained * price_exponent > price_effect {
-                return Err(Error::UnmatchableOrder);
+                return Err(Error::CompleteMatchableOrder);
             }
         } else if remained > price_exponent * price_effect {
-            return Err(Error::UnmatchableOrder);
+            return Err(Error::CompleteMatchableOrder);
         }
     }
 
@@ -310,10 +310,10 @@ fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resul
         let remained = BigUint::from(order.order_amount - u128::from(ckb_bought));
         if order.price.is_exponent_negative() {
             if remained * price_exponent > price_effect {
-                return Err(Error::UnmatchableOrder);
+                return Err(Error::CompleteMatchableOrder);
             }
         } else if remained > price_exponent * price_effect {
-            return Err(Error::UnmatchableOrder);
+            return Err(Error::CompleteMatchableOrder);
         }
     }
 
