@@ -39,7 +39,7 @@ use ckb_std::ckb_types::packed::{Byte, Script, ScriptReader, WitnessArgs};
 use ckb_std::ckb_types::{bytes::Bytes, prelude::*};
 use ckb_std::dynamic_loading::CKBDLContext;
 use ckb_std::error::SysError;
-use ckb_std::high_level::{load_cell, load_script, load_witness_args, QueryIter};
+use ckb_std::high_level::{load_cell_lock_hash, load_script, load_witness_args, QueryIter};
 use ckb_std::{default_alloc, syscalls};
 use share::hash::blake2b_256;
 
@@ -66,8 +66,8 @@ pub fn main() -> Result<(), Error> {
     // Secondly, check whether there is an input's lock hash equal to this order lock args(user
     // lock hash). If it exists, verify it according to the process of cancellation.
     // if it does not exist, verify it according to the process of matching transaction.
-    let input_position = QueryIter::new(load_cell, Source::Input)
-        .position(|cell| &blake2b_256(cell.lock().as_slice())[..] == &user_lock_hash[..]);
+    let input_position = QueryIter::new(load_cell_lock_hash, Source::Input)
+        .position(|lock_hash| lock_hash == &user_lock_hash[..]);
 
     match input_position {
         None => return crate::order_validator::validate(),
