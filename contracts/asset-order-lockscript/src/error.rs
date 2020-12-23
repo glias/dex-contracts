@@ -17,7 +17,7 @@ pub enum Error {
     UnexpectedVersion = 10,
 
     // Order deal
-    UnknownLock = 11,
+    UnknownOutputLock = 11,
     TypeHashChanged,
     PriceChanged,
     OrderTypeChanged,

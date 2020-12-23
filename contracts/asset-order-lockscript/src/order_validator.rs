@@ -337,7 +337,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
             OrderType::BuyCKB => OrderState::BuyCKBCompleted,
         }
     } else {
-        return Err(Error::UnknownLock);
+        return Err(Error::UnknownOutputLock);
     };
 
     if order_state == OrderState::PartialFilled {
