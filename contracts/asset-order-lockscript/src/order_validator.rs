@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use core::convert::TryFrom;
 use core::result::Result;
 
-use ckb_std::ckb_types::packed::Script;
+use ckb_std::ckb_types::{bytes::Bytes, packed::Script};
 use ckb_std::error::SysError;
 use ckb_std::high_level::{
     load_cell_capacity, load_cell_data, load_cell_lock, load_cell_lock_hash, load_cell_type_hash,
@@ -218,7 +218,7 @@ enum OrderState {
     BuyCKBCompleted,
 }
 
-fn validate_sell_ckb_order_price(input: &Cell, output: &Cell) -> Result<(), Error> {
+fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
     if output.capacity > input.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
@@ -251,7 +251,7 @@ fn validate_sell_ckb_order_price(input: &Cell, output: &Cell) -> Result<(), Erro
         }
     }
 
-    if output.lock_hash == input.lock_script.args().raw_data().as_ref() {
+    if completed {
         // Only allow 99% filled order to complete when it can't sell more
         // ckb with this price.
         let remained = BigUint::from(order.order_amount - sudt_got);
@@ -267,7 +267,7 @@ fn validate_sell_ckb_order_price(input: &Cell, output: &Cell) -> Result<(), Erro
     Ok(())
 }
 
-fn validate_buy_ckb_order_price(input: &Cell, output: &Cell) -> Result<(), Error> {
+fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
     if input.capacity > output.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
@@ -304,7 +304,7 @@ fn validate_buy_ckb_order_price(input: &Cell, output: &Cell) -> Result<(), Error
         }
     }
 
-    if output.lock_hash == input.lock_script.args().raw_data().as_ref() {
+    if completed {
         // Only allow 99% filled order to complete when it can't buy more ckb
         // with this price.
         let remained = BigUint::from(order.order_amount - u128::from(ckb_bought));
@@ -329,9 +329,10 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         return Err(Error::OrderAmountIsZero);
     }
 
+    let user_lock_hash: Bytes = input.lock_script.args().unpack();
     let order_state = if output.lock_hash == input.lock_hash {
         OrderState::PartialFilled
-    } else if output.lock_hash == input.lock_script.args().raw_data().as_ref() {
+    } else if output.lock_hash == &user_lock_hash[..] {
         match input_order.type_ {
             OrderType::SellCKB => OrderState::SellCKBCompleted,
             OrderType::BuyCKB => OrderState::BuyCKBCompleted,
@@ -388,7 +389,11 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     }
 
     match input_order.type_ {
-        OrderType::SellCKB => validate_sell_ckb_order_price(&input, &output),
-        OrderType::BuyCKB => validate_buy_ckb_order_price(&input, &output),
+        OrderType::SellCKB => {
+            validate_sell_ckb_price(&input, &output, order_state == OrderState::SellCKBCompleted)
+        }
+        OrderType::BuyCKB => {
+            validate_buy_ckb_price(&input, &output, order_state == OrderState::BuyCKBCompleted)
+        }
     }
 }
