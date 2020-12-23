@@ -19,9 +19,14 @@ const ERR_PRICE_IS_ZERO: i8 = 8;
 const ERR_UNKNOWN_ORDER_TYPE: i8 = 9;
 const ERR_UNEXPECTED_VERSION: i8 = 10;
 const ERR_UNKNOWN_OUTPUT_LOCK: i8 = 11;
+const ERR_TYPE_HASH_CHANGED: i8 = 12;
 const ERR_PRICE_CHANGED: i8 = 13;
 const ERR_ORDER_TYPE_CHANGED: i8 = 14;
-const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 23;
+const ERR_DATA_SIZE_CHANGED: i8 = 15;
+const ERR_ORDER_AMOUNT_IS_ZERO: i8 = 16;
+const ERR_NOT_A_SUDT_CELL: i8 = 17;
+const ERR_NOT_A_FREE_CELL: i8 = 18;
+const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 22;
 
 // secp256k1_blake160_sighash_all lock error code
 const ERR_SECP256K1_WRONG_KEY: i8 = -31;
@@ -34,7 +39,8 @@ fn test_wrong_user_lock_hash_size() {
         custom_lock_args: Some(Bytes::new()),
         witness:          None,
     };
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
 
     let (mut context, tx) = build_test_context(vec![input], vec![output]);
     let tx = context.complete_tx(tx);
@@ -51,7 +57,8 @@ fn test_wrong_order_data_size() {
         custom_lock_args: None,
         witness:          None,
     };
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
 
     let (mut context, tx) = build_test_context(vec![input], vec![output]);
     let tx = context.complete_tx(tx);
@@ -71,7 +78,8 @@ fn test_order_price_is_zero() {
         .order_type(OrderType::SellCKB)
         .build(),
     );
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
+
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
 
     let (mut context, tx) = build_test_context(vec![input], vec![output]);
     let tx = context.complete_tx(tx);
@@ -91,7 +99,8 @@ fn test_unknown_order_type() {
         .order_type_unchecked(111)
         .build(),
     );
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
+
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
 
     let (mut context, tx) = build_test_context(vec![input], vec![output]);
     let tx = context.complete_tx(tx);
@@ -112,7 +121,8 @@ fn test_unexpected_version() {
         .version(100)
         .build(),
     );
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
+
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
 
     let (mut context, tx) = build_test_context(vec![input], vec![output]);
     let tx = context.complete_tx(tx);
@@ -133,9 +143,10 @@ fn test_unknown_output_lock() {
         .version(1)
         .build(),
     );
-    let output = OrderOutput::Free {
-        cell:             FreeCell::new_with_dec(2000, 8),
-        custom_lock_args: Some(Bytes::new()),
+
+    let output = {
+        let o = OrderOutput::new_free(FreeCell::new_with_dec(2000, 8));
+        o.custom_lock_args(Bytes::new())
     };
 
     let (mut context, tx) = build_test_context(vec![input], vec![output]);
@@ -146,17 +157,8 @@ fn test_unknown_output_lock() {
 }
 
 #[test]
-fn test_partial_filled_order_type_hash_changed() {
-    let input0 = OrderInput::new_order(
-        OrderCell::builder()
-        .capacity_dec(2000, 8)          // 2000 ckb
-        .sudt_amount_dec(50, 8)         // 50 sudt
-        .order_amount_dec(150, 8)       // 150 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
-    );
-    let input1 = OrderInput::new_order(
+fn test_partial_filled_type_hash_changed() {
+    let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(800, 8)           // 800 ckb
         .sudt_amount_dec(500, 8)        // 500 sudt
@@ -166,8 +168,66 @@ fn test_partial_filled_order_type_hash_changed() {
         .build(),
     );
 
-    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
-    let output1 = OrderOutput::PartialFilledOrder(
+    let output = OrderOutput::new_order(
+        OrderCell::builder()
+            .capacity_dec(1550, 8)
+            .sudt_amount_dec(34955, 6)
+            .order_amount_dec(250, 8)
+            .price(5, 0)
+            .order_type(OrderType::BuyCKB)
+            .build(),
+    );
+    let type_changed_output = output.custom_type_args(Bytes::from_static(b"changed"));
+
+    let (mut context, tx) = build_test_context(vec![input], vec![type_changed_output]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_TYPE_HASH_CHANGED, 0));
+}
+
+#[test]
+fn test_partial_filled_price_changed() {
+    let input = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(800, 8)           // 800 ckb
+        .sudt_amount_dec(500, 8)        // 500 sudt
+        .order_amount_dec(1000, 8)      // 1000 ckb
+        .price(5, 0)                    // 5
+        .order_type(OrderType::BuyCKB)
+        .build(),
+    );
+
+    let output = OrderOutput::new_order(
+        OrderCell::builder()
+            .capacity_dec(1550, 8)
+            .sudt_amount_dec(34955, 6)
+            .order_amount_dec(250, 8)
+            .price(1, 0)
+            .order_type(OrderType::BuyCKB)
+            .build(),
+    );
+
+    let (mut context, tx) = build_test_context(vec![input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_PRICE_CHANGED, 0));
+}
+
+#[test]
+fn test_partial_filled_order_type_changed() {
+    let input = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(800, 8)           // 800 ckb
+        .sudt_amount_dec(500, 8)        // 500 sudt
+        .order_amount_dec(1000, 8)      // 1000 ckb
+        .price(5, 0)                    // 5
+        .order_type(OrderType::BuyCKB)
+        .build(),
+    );
+
+    let output = OrderOutput::new_order(
         OrderCell::builder()
             .capacity_dec(1550, 8)
             .sudt_amount_dec(34955, 6)
@@ -177,16 +237,66 @@ fn test_partial_filled_order_type_hash_changed() {
             .build(),
     );
 
-    let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
+    let (mut context, tx) = build_test_context(vec![input], vec![output]);
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_ORDER_TYPE_CHANGED, 1));
+    assert_error_eq!(err, tx_error(ERR_ORDER_TYPE_CHANGED, 0));
 }
 
 #[test]
-fn test_ckb_sudt_order_price_changed() {
-    let input0 = OrderInput::new_order(
+fn test_partial_filled_data_size_changed() {
+    let input = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(800, 8)           // 800 ckb
+        .sudt_amount_dec(500, 8)        // 500 sudt
+        .order_amount_dec(1000, 8)      // 1000 ckb
+        .price(5, 0)                    // 5
+        .order_type(OrderType::BuyCKB)
+        .build(),
+    );
+
+    let output = OrderOutput::new_order(OrderCell::new_unchecked(1000, Bytes::new()));
+
+    let (mut context, tx) = build_test_context(vec![input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_DATA_SIZE_CHANGED, 0));
+}
+
+#[test]
+fn test_partial_filled_order_amount_is_zero() {
+    let input = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(800, 8)           // 800 ckb
+        .sudt_amount_dec(500, 8)        // 500 sudt
+        .order_amount_dec(1000, 8)      // 1000 ckb
+        .price(5, 0)                    // 5
+        .order_type(OrderType::BuyCKB)
+        .build(),
+    );
+
+    let output = OrderOutput::new_order(
+        OrderCell::builder()
+            .capacity_dec(1550, 8)
+            .sudt_amount_dec(34955, 6)
+            .order_amount_dec(0, 0)
+            .price(5, 0)
+            .order_type(OrderType::BuyCKB)
+            .build(),
+    );
+
+    let (mut context, tx) = build_test_context(vec![input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_ORDER_AMOUNT_IS_ZERO, 0));
+}
+
+#[test]
+fn test_type_hash_changed_output_from_completed_sell_ckb_order() {
+    let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(2000, 8)          // 2000 ckb
         .sudt_amount_dec(50, 8)         // 50 sudt
@@ -196,32 +306,80 @@ fn test_ckb_sudt_order_price_changed() {
         .build(),
     );
 
-    let input1 = OrderInput::new_order(
+    let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
+    let type_changed_output = output.custom_type_args(Bytes::from_static(b"changed_type"));
+
+    let (mut context, tx) = build_test_context(vec![input], vec![type_changed_output]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_TYPE_HASH_CHANGED, 0));
+}
+
+#[test]
+fn test_not_a_sudt_cell_output_from_completed_sell_ckb_order() {
+    let input = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(800, 8)           // 800 ckb
-        .sudt_amount_dec(500, 8)        // 500 sudt
-        .order_amount_dec(1000, 8)      // 1000 ckb
-        .price(6, 0)                    // 6
+        .capacity_dec(2000, 8)          // 2000 ckb
+        .sudt_amount_dec(50, 8)         // 50 sudt
+        .order_amount_dec(150, 8)       // 150 sudt
+        .price(5, 0)                    // 5
+        .order_type(OrderType::SellCKB)
+        .build(),
+    );
+
+    let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
+
+    let (mut context, tx) = build_test_context(vec![input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_NOT_A_SUDT_CELL, 0));
+}
+
+#[test]
+fn test_not_a_sudt_cell_output_from_completed_buy_ckb_order() {
+    let input = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(2000, 8)          // 2000 ckb
+        .sudt_amount_dec(50, 8)         // 50 sudt
+        .order_amount_dec(150, 8)       // 150 sudt
+        .price(5, 0)                    // 5
         .order_type(OrderType::BuyCKB)
         .build(),
     );
 
-    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
-    let output1 = OrderOutput::PartialFilledOrder(
-        OrderCell::builder()
-            .capacity_dec(1550, 8)
-            .sudt_amount_dec(34955, 6)
-            .order_amount_dec(250, 8)
-            .price(5, 0)
-            .order_type(OrderType::BuyCKB)
-            .build(),
-    );
+    let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
 
-    let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
+    let (mut context, tx) = build_test_context(vec![input], vec![output]);
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_PRICE_CHANGED, 1));
+    assert_error_eq!(err, tx_error(ERR_NOT_A_SUDT_CELL, 0));
+}
+
+#[test]
+fn test_not_a_free_cell_output_from_completed_buy_ckb_order() {
+    let input = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(2000, 8)          // 2000 ckb
+        .sudt_amount_dec(50, 8)         // 50 sudt
+        .order_amount_dec(150, 8)       // 150 sudt
+        .price(5, 0)                    // 5
+        .order_type(OrderType::BuyCKB)
+        .build(),
+    );
+
+    let output = OrderOutput::new_free(FreeCell::new_unchecked(
+        2000,
+        Bytes::from_static(b"some data"),
+    ));
+
+    let (mut context, tx) = build_test_context(vec![input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_NOT_A_FREE_CELL, 0));
 }
 
 #[test]
@@ -248,8 +406,8 @@ fn test_ckb_sudt_two_orders_one_partial_filled_and_one_completed() {
 
     // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
     // output2 capacity = 800 + 750 = 1550
-    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
-    let output1 = OrderOutput::PartialFilledOrder(
+    let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
+    let output1 = OrderOutput::new_order(
         OrderCell::builder()
             .capacity_dec(1550, 8)
             .sudt_amount_dec(34955, 6)
@@ -289,8 +447,8 @@ fn test_ckb_sudt_completed_matched_order_pair() {
         .build(),
     );
 
-    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
-    let output1 = OrderOutput::Sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
+    let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
+    let output1 = OrderOutput::new_sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
 
     let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
     let tx = context.complete_tx(tx);
@@ -343,10 +501,10 @@ fn test_ckb_sudt_two_completed_matched_order_pairs() {
         .build(),
     );
 
-    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 150, 8));
-    let output1 = OrderOutput::Sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
-    let output2 = OrderOutput::Sudt(SudtCell::new_with_dec(199_40, 6, 50, 8));
-    let output3 = OrderOutput::Sudt(SudtCell::new_with_dec(600, 8, 59_88, 6));
+    let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 150, 8));
+    let output1 = OrderOutput::new_sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
+    let output2 = OrderOutput::new_sudt(SudtCell::new_with_dec(199_40, 6, 50, 8));
+    let output3 = OrderOutput::new_sudt(SudtCell::new_with_dec(600, 8, 59_88, 6));
 
     let (mut context, tx) = build_test_context(vec![input0, input1, input2, input3], vec![
         output0, output1, output2, output3,
@@ -356,40 +514,6 @@ fn test_ckb_sudt_two_completed_matched_order_pairs() {
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("pass verification");
-}
-
-#[test]
-fn test_ckb_sudt_buy_ckb_negative_capacity_difference() {
-    let input0 = OrderInput::new_order(
-        OrderCell::builder()
-        .capacity_dec(2000, 8)          // 2000 ckb
-        .sudt_amount_dec(50, 8)         // 50 sudt
-        .order_amount_dec(150, 8)       // 150 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
-    );
-
-    // Pass wrong capacity to trigger NegativeCapacityDifference failed
-    // Right capacity is 800 ckb
-    let input1 = OrderInput::new_order(
-        OrderCell::builder()
-        .capacity_dec(1800, 8)          // 1800 ckb
-        .sudt_amount_dec(500, 8)        // 500 sudt
-        .order_amount_dec(750, 8)       // 750 ckb
-        .price(5, 0)                    // 5
-        .order_type(OrderType::BuyCKB)
-        .build(),
-    );
-
-    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
-    let output1 = OrderOutput::Sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
-
-    let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
-    let tx = context.complete_tx(tx);
-
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NEGATIVE_CAPACITY_DIFFERENCE, 1));
 }
 
 #[test]
@@ -416,14 +540,48 @@ fn test_ckb_sudt_sell_ckb_negative_capacity_difference() {
 
     // Pass wrong capacity to trigger NegativeCapacityDifference failed
     // Right capacity is 1247.75 ckb
-    let output0 = OrderOutput::Sudt(SudtCell::new_with_dec(2247_75, 6, 200, 8));
-    let output1 = OrderOutput::Sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
+    let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(2247_75, 6, 200, 8));
+    let output1 = OrderOutput::new_sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
 
     let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_NEGATIVE_CAPACITY_DIFFERENCE, 0));
+}
+
+#[test]
+fn test_ckb_sudt_buy_ckb_negative_capacity_difference() {
+    let input0 = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(2000, 8)          // 2000 ckb
+        .sudt_amount_dec(50, 8)         // 50 sudt
+        .order_amount_dec(150, 8)       // 150 sudt
+        .price(5, 0)                    // 5
+        .order_type(OrderType::SellCKB)
+        .build(),
+    );
+
+    // Pass wrong capacity to trigger NegativeCapacityDifference failed
+    // Right capacity is 800 ckb
+    let input1 = OrderInput::new_order(
+        OrderCell::builder()
+        .capacity_dec(1800, 8)          // 1800 ckb
+        .sudt_amount_dec(500, 8)        // 500 sudt
+        .order_amount_dec(750, 8)       // 750 ckb
+        .price(5, 0)                    // 5
+        .order_type(OrderType::BuyCKB)
+        .build(),
+    );
+
+    let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
+    let output1 = OrderOutput::new_sudt(SudtCell::new_with_dec(1550, 8, 349_55, 6));
+
+    let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
+    let tx = context.complete_tx(tx);
+
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_NEGATIVE_CAPACITY_DIFFERENCE, 1));
 }
 
 #[test]
@@ -477,7 +635,7 @@ fn test_directly_cancel_order_using_signature_witness() {
         }
     };
 
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
     let tx = build_tx(&mut context, vec![order_input], vec![output]);
     let tx = context.complete_tx(tx);
 
@@ -524,7 +682,7 @@ fn test_cancel_order_use_secp256k1_lockscript() {
         }
     };
 
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
     let tx = build_tx(&mut context, vec![cancel_input, order_input], vec![output]);
     let tx = context.complete_tx(tx);
 
@@ -572,7 +730,7 @@ fn test_cancel_order_use_secp256k1_lockscript_with_wrong_key() {
         }
     };
 
-    let output = OrderOutput::Sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
     let tx = build_tx(&mut context, vec![cancel_input, order_input], vec![output]);
     let tx = context.complete_tx(tx);
 
@@ -710,16 +868,25 @@ impl SudtCell {
             data:     sudt_data.as_bytes(),
         }
     }
+
+    fn new_unchecked(capacity: u64, data: Bytes) -> Self {
+        SudtCell {
+            capacity: Capacity::shannons(capacity),
+            data,
+        }
+    }
 }
 
 struct FreeCell {
     capacity: Capacity,
+    data:     Bytes,
 }
 
 impl FreeCell {
     fn new(capacity: u64) -> Self {
         FreeCell {
             capacity: Capacity::shannons(capacity),
+            data:     Bytes::new(),
         }
     }
 
@@ -728,6 +895,14 @@ impl FreeCell {
 
         FreeCell {
             capacity: Capacity::shannons(capacity),
+            data:     Bytes::new(),
+        }
+    }
+
+    fn new_unchecked(capacity: u64, data: Bytes) -> Self {
+        FreeCell {
+            capacity: Capacity::shannons(capacity),
+            data,
         }
     }
 }
@@ -758,13 +933,48 @@ impl OrderInput {
     }
 }
 
-enum OrderOutput {
+enum OutputCell {
     PartialFilledOrder(OrderCell),
     Sudt(SudtCell),
-    Free {
-        cell:             FreeCell,
-        custom_lock_args: Option<Bytes>,
-    },
+    Free(FreeCell),
+}
+
+struct OrderOutput {
+    cell:             OutputCell,
+    custom_type_args: Option<Bytes>,
+    custom_lock_args: Option<Bytes>,
+}
+
+impl OrderOutput {
+    fn new_order(cell: OrderCell) -> Self {
+        Self::inner_new(OutputCell::PartialFilledOrder(cell))
+    }
+
+    fn new_sudt(cell: SudtCell) -> Self {
+        Self::inner_new(OutputCell::Sudt(cell))
+    }
+
+    fn new_free(cell: FreeCell) -> Self {
+        Self::inner_new(OutputCell::Free(cell))
+    }
+
+    fn inner_new(cell: OutputCell) -> Self {
+        OrderOutput {
+            cell,
+            custom_type_args: None,
+            custom_lock_args: None,
+        }
+    }
+
+    fn custom_type_args(mut self, args: Bytes) -> Self {
+        self.custom_type_args = Some(args);
+        self
+    }
+
+    fn custom_lock_args(mut self, args: Bytes) -> Self {
+        self.custom_lock_args = Some(args);
+        self
+    }
 }
 
 fn build_tx(
@@ -873,44 +1083,49 @@ fn build_tx(
     for (idx, order_result) in output_results.into_iter().enumerate() {
         let (user_lock_script, hash) = create_user_lock_script(context, idx);
 
-        let (output, data) = match order_result {
-            OrderOutput::PartialFilledOrder(order) => {
+        let user_lock_script = match order_result.custom_lock_args {
+            Some(lock_args) => user_lock_script.as_builder().args(lock_args.pack()).build(),
+            None => user_lock_script,
+        };
+
+        let sudt_type_script = match order_result.custom_type_args {
+            Some(type_args) => {
+                let type_script = sudt_type_script.clone();
+                type_script.as_builder().args(type_args.pack()).build()
+            }
+            None => sudt_type_script.clone(),
+        };
+
+        let (output, data) = match order_result.cell {
+            OutputCell::PartialFilledOrder(order) => {
                 let asset_lock_script = context
                     .build_script(&asset_lock_out_point, hash)
                     .expect("asset lock script");
 
                 let output = CellOutput::new_builder()
                     .capacity(order.capacity.pack())
-                    .type_(Some(sudt_type_script.clone()).pack())
+                    .type_(Some(sudt_type_script).pack())
                     .lock(asset_lock_script)
                     .build();
 
                 (output, order.data)
             }
-            OrderOutput::Sudt(sudt) => {
+            OutputCell::Sudt(sudt) => {
                 let output = CellOutput::new_builder()
                     .capacity(sudt.capacity.pack())
-                    .type_(Some(sudt_type_script.clone()).pack())
+                    .type_(Some(sudt_type_script).pack())
                     .lock(user_lock_script)
                     .build();
 
                 (output, sudt.data)
             }
-            OrderOutput::Free {
-                cell,
-                custom_lock_args: opt_custom_lock_args,
-            } => {
-                let user_lock_script = match opt_custom_lock_args {
-                    Some(lock_args) => user_lock_script.as_builder().args(lock_args.pack()).build(),
-                    None => user_lock_script,
-                };
-
+            OutputCell::Free(free) => {
                 let output = CellOutput::new_builder()
-                    .capacity(cell.capacity.pack())
+                    .capacity(free.capacity.pack())
                     .lock(user_lock_script)
                     .build();
 
-                (output, Bytes::new())
+                (output, free.data)
             }
         };
 
