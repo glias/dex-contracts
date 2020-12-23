@@ -9,47 +9,42 @@ pub enum Error {
     LengthNotEnough,
     Encoding,
     // Add customized errors here...
-    #[allow(dead_code)]
-    Secp256k1 = 5,
-    #[allow(dead_code)]
-    WrongPubkey,
-    #[allow(dead_code)]
-    LoadPrefilledData,
-    #[allow(dead_code)]
-    RecoverPubkey,
-    WrongDataLengthOrFormat,
-    NegativeSudtDifference = 10,
-    NegativeCapacityDifference,
-    InputSudtIsZero,
-    UnknownOrderType,
+    WrongUserLockHashSize = 5,
+    CancelOrderWithoutWitness,
+    WrongOrderDataSize,
     PriceIsZero,
-    PriceNotMatched = 15,
+    UnknownOrderType,
+    UnexpectedVersion = 10,
+    PriceExponentOutOfRange,
+
+    // Order deal
+    UnknownLock = 11,
     TypeHashChanged,
     PriceChanged,
-    UnknownLock,
-    WrongUserLockHashLength,
-    #[allow(dead_code)]
-    NoInputLockHashMatch = 20,
-    WrongMatchInputWitness,
-    PriceExponentOutOfRange, // -100 ~ 100
-    OrderAmountIsZero,
-    CompleteMatchableOrder,
-    NotASudtCell = 25,
-    NotAFreeCell,
-    UnexpectedVersion,
     OrderTypeChanged,
+    DataSizeChange = 15,
+    VersionChanged,
+    OrderAmountIsZero,
+    NotASudtCell,
+    NotAFreeCell,
+    InputSudtIsZero = 20,
+    DataSizeSmallerThanSudt,
+    NegativeSudtDifference,
+    NegativeCapacityDifference,
+    PriceMismatch,
+    CompleteMatchableOrder = 25,
 
-    UserLockNotFound = 80,
+    // Directly cancellation
+    UserLockNotFound = 26,
     UserLockScriptEncoding,
     UserLockHashNotMatch,
     UnknownUserLockHashType,
-    UserLockCellDepNotFound,
+    UserLockCellDepNotFound = 30,
     ValidationFunctionNotFound,
-
-    DynamicLoadingContextFailure = 90,
+    DynamicLoadingContextFailure,
     DynamicLoadingInvalidElf,
     DynamicLoadingMemoryNotEnough,
-    DynamicLoadingCellNotFound,
+    DynamicLoadingCellNotFound = 35,
     DynamicLoadingInvalidAlign,
 }
 

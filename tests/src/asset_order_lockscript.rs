@@ -13,9 +13,9 @@ use molecule::prelude::*;
 
 const MAX_CYCLES: u64 = 10000_0000;
 
-const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 11;
-const ERR_PRICE_CHANGED: i8 = 17;
-const ERR_ORDER_TYPE_CHANGED: i8 = 28;
+const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 62;
+const ERR_PRICE_CHANGED: i8 = 52;
+const ERR_ORDER_TYPE_CHANGED: i8 = 53;
 // NOTE: This error comes from secp256k1_blake160_sighash_all lock
 const ERR_SECP256K1_WRONG_KEY: i8 = -31;
 

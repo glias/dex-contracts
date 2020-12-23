@@ -54,7 +54,7 @@ pub fn main() -> Result<(), Error> {
 
     // The length of user lock hash must be 32 bytes
     if user_lock_hash.len() != 32 {
-        return Err(Error::WrongUserLockHashLength);
+        return Err(Error::WrongUserLockHashSize);
     }
 
     // Check cancellation
@@ -74,7 +74,7 @@ pub fn main() -> Result<(), Error> {
         // Since anyone can pay lock dones't require signature to unlock, we must make
         // sure that witness args isn't empty.
         Some(position) if load_witness_args(position, Source::Input).is_ok() => Ok(()),
-        _ => Err(Error::WrongMatchInputWitness),
+        _ => Err(Error::CancelOrderWithoutWitness),
     }
 }
 

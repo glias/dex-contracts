@@ -132,7 +132,7 @@ impl TryFrom<&[u8]> for Order {
 
     fn try_from(cell_data: &[u8]) -> Result<Order, Self::Error> {
         if cell_data.len() != ORDER_DATA_LEN {
-            return Err(Error::WrongDataLengthOrFormat);
+            return Err(Error::WrongOrderDataSize);
         }
 
         let mut data_buf = [0u8; ORDER_DATA_LEN];
@@ -202,7 +202,7 @@ impl Cell {
 
     pub fn sudt_amount(&self) -> Result<u128, Error> {
         if self.data.len() < 16 {
-            return Err(Error::WrongDataLengthOrFormat);
+            return Err(Error::DataSizeSmallerThanSudt);
         }
 
         let mut buf = [0u8; 16];
@@ -239,7 +239,7 @@ fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resu
         if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold * price_exponent.clone()
             > BigUint::from(FEE_DECIMAL) * sudt_got * price_effect.clone()
         {
-            return Err(Error::PriceNotMatched);
+            return Err(Error::PriceMismatch);
         }
     } else {
         let price = price_exponent.clone() * price_effect.clone();
@@ -247,7 +247,7 @@ fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resu
         if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold
             > BigUint::from(FEE_DECIMAL) * sudt_got * price
         {
-            return Err(Error::PriceNotMatched);
+            return Err(Error::PriceMismatch);
         }
     }
 
@@ -292,7 +292,7 @@ fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resul
         if BigUint::from(FEE_DECIMAL) * ckb_bought * price_exponent.clone()
             < BigUint::from(FEE_DECIMAL - FEE) * sudt_paid * price_effect.clone()
         {
-            return Err(Error::PriceNotMatched);
+            return Err(Error::PriceMismatch);
         }
     } else {
         let price = price_exponent.clone() * price_effect.clone();
@@ -300,7 +300,7 @@ fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resul
         if BigUint::from(FEE_DECIMAL) * ckb_bought
             < BigUint::from(FEE_DECIMAL - FEE) * price * sudt_paid
         {
-            return Err(Error::PriceNotMatched);
+            return Err(Error::PriceMismatch);
         }
     }
 
@@ -347,7 +347,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         }
 
         if output.data.len() != input.data.len() {
-            return Err(Error::WrongDataLengthOrFormat);
+            return Err(Error::DataSizeChange);
         }
 
         let output_order = output.to_order()?;
@@ -360,7 +360,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         }
 
         if output_order.version != input_order.version {
-            return Err(Error::UnexpectedVersion);
+            return Err(Error::VersionChanged);
         }
 
         if output_order.order_amount == 0 {
