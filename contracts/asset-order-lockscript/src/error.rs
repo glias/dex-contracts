@@ -15,7 +15,6 @@ pub enum Error {
     PriceIsZero,
     UnknownOrderType,
     UnexpectedVersion = 10,
-    PriceExponentOutOfRange,
 
     // Order deal
     UnknownLock = 11,

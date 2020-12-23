@@ -67,9 +67,6 @@ impl TryFrom<[u8; PRICE_BYTES_LEN]> for Price {
             buf.copy_from_slice(&bytes[8..9]);
             i8::from_le_bytes(buf)
         };
-        if exponent < -100 || exponent > 100 {
-            return Err(Error::PriceExponentOutOfRange);
-        }
 
         Ok(Price { effect, exponent })
     }
@@ -81,8 +78,10 @@ impl Price {
     }
 
     fn biguint_exponent(&self) -> BigUint {
-        let exp = u32::from(self.exponent.abs() as u32);
-        assert!(exp <= 100, "exponent range is -100 to 100");
+        let exp = {
+            let opt_abs = self.exponent.checked_abs();
+            opt_abs.map_or_else(|| 128u32, |e| e as u32)
+        };
         BigUint::from(10u8).pow(exp)
     }
 
