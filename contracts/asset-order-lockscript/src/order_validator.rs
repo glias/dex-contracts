@@ -346,7 +346,7 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         }
 
         if output.data.len() != input.data.len() {
-            return Err(Error::DataSizeChange);
+            return Err(Error::DataSizeChanged);
         }
 
         let output_order = output.to_order()?;
@@ -356,10 +356,6 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
 
         if output_order.type_ != input_order.type_ {
             return Err(Error::OrderTypeChanged);
-        }
-
-        if output_order.version != input_order.version {
-            return Err(Error::VersionChanged);
         }
 
         if output_order.order_amount == 0 {
