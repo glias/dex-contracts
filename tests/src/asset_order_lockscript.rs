@@ -19,330 +19,6 @@ const ERR_ORDER_TYPE_CHANGED: i8 = 53;
 // NOTE: This error comes from secp256k1_blake160_sighash_all lock
 const ERR_SECP256K1_WRONG_KEY: i8 = -31;
 
-enum OrderType {
-    SellCKB = 0,
-    BuyCKB = 1,
-}
-
-impl OrderType {
-    fn to_u8(&self) -> u8 {
-        match self {
-            OrderType::SellCKB => 0,
-            OrderType::BuyCKB => 1,
-        }
-    }
-}
-
-struct OrderCell {
-    capacity: Capacity,
-    data:     Bytes,
-}
-
-impl OrderCell {
-    fn builder() -> OrderCellBuilder {
-        OrderCellBuilder::default()
-    }
-}
-
-#[derive(Default)]
-struct OrderCellBuilder {
-    capacity:       u64,
-    sudt_amount:    u128,
-    version:        u8,
-    order_amount:   u128,
-    price_effect:   u64,
-    price_exponent: i8,
-    order_type:     u8,
-}
-
-impl OrderCellBuilder {
-    fn capacity_dec(mut self, capacity: u64, decimal: u32) -> Self {
-        self.capacity = capacity * 10u64.pow(decimal);
-        self
-    }
-
-    fn sudt_amount(mut self, sudt_amount: u128) -> Self {
-        self.sudt_amount = sudt_amount;
-        self
-    }
-
-    fn sudt_amount_dec(mut self, sudt_amount: u128, decimal: u32) -> Self {
-        self.sudt_amount = sudt_amount * 10u128.pow(decimal);
-        self
-    }
-
-    fn order_amount_dec(mut self, order_amount: u128, decimal: u32) -> Self {
-        self.order_amount = order_amount * 10u128.pow(decimal);
-        self
-    }
-
-    fn price(mut self, effect: u64, exponent: i8) -> Self {
-        self.price_effect = effect;
-        self.price_exponent = exponent;
-        self
-    }
-
-    fn order_type(mut self, order_type: OrderType) -> Self {
-        self.order_type = order_type.to_u8();
-        self
-    }
-
-    fn build(self) -> OrderCell {
-        let version = if self.version == 0 { 1 } else { self.version };
-        let price_exponent = self.price_exponent.to_le_bytes();
-
-        let asset_order = AssetOrder::new_builder()
-            .sudt_amount(self.sudt_amount.pack())
-            .version(version.into())
-            .order_amount(self.order_amount.pack())
-            .price_effect(self.price_effect.pack())
-            .price_exponent(price_exponent[0].into())
-            .order_type(self.order_type.into())
-            .build();
-
-        OrderCell {
-            capacity: Capacity::shannons(self.capacity),
-            data:     asset_order.as_bytes(),
-        }
-    }
-}
-
-struct SudtCell {
-    capacity: Capacity,
-    data:     Bytes,
-}
-
-impl SudtCell {
-    #[allow(dead_code)]
-    fn new(capacity: u64, amount: u128) -> Self {
-        let sudt_data: Uint128 = amount.pack();
-
-        SudtCell {
-            capacity: Capacity::shannons(capacity),
-            data:     sudt_data.as_bytes(),
-        }
-    }
-
-    fn new_with_dec(capacity: u64, cap_dec: u32, amount: u128, amount_dec: u32) -> Self {
-        let capacity = capacity * 10u64.pow(cap_dec);
-        let sudt_data: Uint128 = (amount * 10u128.pow(amount_dec)).pack();
-
-        SudtCell {
-            capacity: Capacity::shannons(capacity),
-            data:     sudt_data.as_bytes(),
-        }
-    }
-}
-
-struct FreeCell {
-    capacity: Capacity,
-}
-
-impl FreeCell {
-    fn new(capacity: u64) -> Self {
-        FreeCell {
-            capacity: Capacity::shannons(capacity),
-        }
-    }
-}
-
-enum OrderInput {
-    Order {
-        cell_deps: Option<Vec<CellDep>>,
-        cell:      OrderCell,
-        lock_args: Option<Bytes>,
-        witness:   Option<Bytes>,
-    },
-    AnyUnlock {
-        cell_deps: Option<Vec<CellDep>>,
-        cell:      FreeCell,
-        lock:      Script,
-        witness:   Bytes,
-    },
-}
-
-impl OrderInput {
-    pub fn new_order(cell: OrderCell) -> Self {
-        OrderInput::Order {
-            cell_deps: None,
-            cell,
-            lock_args: None,
-            witness: None,
-        }
-    }
-}
-
-enum OrderOutput {
-    PartialFilledOrder(OrderCell),
-    Sudt(SudtCell),
-    #[allow(dead_code)]
-    Free(FreeCell),
-}
-
-fn build_tx(
-    context: &mut Context,
-    input_orders: Vec<OrderInput>,
-    output_results: Vec<OrderOutput>,
-) -> TransactionView {
-    // Deploy asset order lockscript
-    let asset_lock_bin: Bytes = Loader::default().load_binary("asset-order-lockscript");
-    let asset_lock_out_point = context.deploy_cell(asset_lock_bin);
-    let asset_lock_dep = CellDep::new_builder()
-        .out_point(asset_lock_out_point.clone())
-        .build();
-
-    // Deploy always sucess script
-    let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
-    let always_success_dep = CellDep::new_builder()
-        .out_point(always_success_out_point.clone())
-        .build();
-
-    // Always success lock script
-    let always_success_lock_script = context
-        .build_script(&always_success_out_point, Default::default())
-        .expect("always success lock script");
-
-    // Use always success as test sudt type contract
-    let sudt_type_script = always_success_lock_script;
-
-    // Pass idx as args to always success lock script to mock different user lock script
-    let create_user_lock_script = |context: &mut Context, idx: usize| -> (Script, Bytes) {
-        let user_lock_script = {
-            let args = Bytes::from(idx.to_le_bytes().to_vec());
-            context
-                .build_script(&always_success_out_point, args)
-                .expect("user lock script")
-        };
-        let hash = user_lock_script.calc_script_hash().as_bytes();
-        (user_lock_script, hash)
-    };
-
-    // Prepare inputs
-    let mut inputs = vec![];
-    let mut witnesses = vec![];
-    let mut cell_deps: Vec<CellDep> = vec![];
-    for (idx, order_input) in input_orders.into_iter().enumerate() {
-        match order_input {
-            OrderInput::Order {
-                cell_deps: opt_cell_deps,
-                cell,
-                lock_args: opt_args,
-                witness: opt_witness,
-            } => {
-                let hash = opt_args.unwrap_or_else(|| {
-                    let (_, hash) = create_user_lock_script(context, idx);
-                    hash
-                });
-
-                let asset_lock_script = context
-                    .build_script(&asset_lock_out_point, hash)
-                    .expect("asset lock script");
-
-                let input_out_point = context.create_cell(
-                    CellOutput::new_builder()
-                        .capacity(cell.capacity.pack())
-                        .lock(asset_lock_script.clone())
-                        .type_(Some(sudt_type_script.clone()).pack())
-                        .build(),
-                    cell.data,
-                );
-
-                let input = CellInput::new_builder()
-                    .previous_output(input_out_point)
-                    .build();
-
-                cell_deps.extend(opt_cell_deps.unwrap_or_default());
-                inputs.push(input);
-                witnesses.push(opt_witness.unwrap_or_default());
-            }
-            OrderInput::AnyUnlock {
-                cell_deps: opt_cell_deps,
-                cell,
-                lock,
-                witness,
-            } => {
-                let input_out_point = context.create_cell(
-                    CellOutput::new_builder()
-                        .capacity(cell.capacity.pack())
-                        .lock(lock)
-                        .build(),
-                    Bytes::new(),
-                );
-
-                let input = CellInput::new_builder()
-                    .previous_output(input_out_point)
-                    .build();
-
-                cell_deps.extend(opt_cell_deps.unwrap_or_default());
-                inputs.push(input);
-                witnesses.push(witness);
-            }
-        }
-    }
-
-    let mut outputs = vec![];
-    let mut outputs_data = vec![];
-    for (idx, order_result) in output_results.into_iter().enumerate() {
-        let (user_lock_script, hash) = create_user_lock_script(context, idx);
-
-        let (output, data) = match order_result {
-            OrderOutput::PartialFilledOrder(order) => {
-                let asset_lock_script = context
-                    .build_script(&asset_lock_out_point, hash)
-                    .expect("asset lock script");
-
-                let output = CellOutput::new_builder()
-                    .capacity(order.capacity.pack())
-                    .type_(Some(sudt_type_script.clone()).pack())
-                    .lock(asset_lock_script)
-                    .build();
-
-                (output, order.data)
-            }
-            OrderOutput::Sudt(sudt) => {
-                let output = CellOutput::new_builder()
-                    .capacity(sudt.capacity.pack())
-                    .type_(Some(sudt_type_script.clone()).pack())
-                    .lock(user_lock_script)
-                    .build();
-
-                (output, sudt.data)
-            }
-            OrderOutput::Free(free) => {
-                let output = CellOutput::new_builder()
-                    .capacity(free.capacity.pack())
-                    .lock(user_lock_script)
-                    .build();
-                (output, Bytes::new())
-            }
-        };
-
-        outputs.push(output);
-        outputs_data.push(data);
-    }
-
-    let tx = TransactionBuilder::default()
-        .inputs(inputs)
-        .outputs(outputs)
-        .outputs_data(outputs_data.pack())
-        .cell_dep(asset_lock_dep)
-        .cell_dep(always_success_dep)
-        .cell_deps(cell_deps)
-        .witnesses(witnesses.pack())
-        .build();
-
-    tx
-}
-
-fn build_test_context(
-    input_orders: Vec<OrderInput>,
-    output_results: Vec<OrderOutput>,
-) -> (Context, TransactionView) {
-    let mut context = Context::default();
-    let tx = build_tx(&mut context, input_orders, output_results);
-    (context, tx)
-}
-
 #[test]
 fn test_ckb_sudt_two_orders_one_partial_filled_and_one_completed() {
     let input0 = OrderInput::new_order(
@@ -793,6 +469,330 @@ fn test_cancel_order_use_secp256k1_lockscript_with_wrong_key() {
         err,
         ScriptError::ValidationFailure(ERR_SECP256K1_WRONG_KEY).input_lock_script(0)
     );
+}
+
+enum OrderType {
+    SellCKB = 0,
+    BuyCKB = 1,
+}
+
+impl OrderType {
+    fn to_u8(&self) -> u8 {
+        match self {
+            OrderType::SellCKB => 0,
+            OrderType::BuyCKB => 1,
+        }
+    }
+}
+
+struct OrderCell {
+    capacity: Capacity,
+    data:     Bytes,
+}
+
+impl OrderCell {
+    fn builder() -> OrderCellBuilder {
+        OrderCellBuilder::default()
+    }
+}
+
+#[derive(Default)]
+struct OrderCellBuilder {
+    capacity:       u64,
+    sudt_amount:    u128,
+    version:        u8,
+    order_amount:   u128,
+    price_effect:   u64,
+    price_exponent: i8,
+    order_type:     u8,
+}
+
+impl OrderCellBuilder {
+    fn capacity_dec(mut self, capacity: u64, decimal: u32) -> Self {
+        self.capacity = capacity * 10u64.pow(decimal);
+        self
+    }
+
+    fn sudt_amount(mut self, sudt_amount: u128) -> Self {
+        self.sudt_amount = sudt_amount;
+        self
+    }
+
+    fn sudt_amount_dec(mut self, sudt_amount: u128, decimal: u32) -> Self {
+        self.sudt_amount = sudt_amount * 10u128.pow(decimal);
+        self
+    }
+
+    fn order_amount_dec(mut self, order_amount: u128, decimal: u32) -> Self {
+        self.order_amount = order_amount * 10u128.pow(decimal);
+        self
+    }
+
+    fn price(mut self, effect: u64, exponent: i8) -> Self {
+        self.price_effect = effect;
+        self.price_exponent = exponent;
+        self
+    }
+
+    fn order_type(mut self, order_type: OrderType) -> Self {
+        self.order_type = order_type.to_u8();
+        self
+    }
+
+    fn build(self) -> OrderCell {
+        let version = if self.version == 0 { 1 } else { self.version };
+        let price_exponent = self.price_exponent.to_le_bytes();
+
+        let asset_order = AssetOrder::new_builder()
+            .sudt_amount(self.sudt_amount.pack())
+            .version(version.into())
+            .order_amount(self.order_amount.pack())
+            .price_effect(self.price_effect.pack())
+            .price_exponent(price_exponent[0].into())
+            .order_type(self.order_type.into())
+            .build();
+
+        OrderCell {
+            capacity: Capacity::shannons(self.capacity),
+            data:     asset_order.as_bytes(),
+        }
+    }
+}
+
+struct SudtCell {
+    capacity: Capacity,
+    data:     Bytes,
+}
+
+impl SudtCell {
+    #[allow(dead_code)]
+    fn new(capacity: u64, amount: u128) -> Self {
+        let sudt_data: Uint128 = amount.pack();
+
+        SudtCell {
+            capacity: Capacity::shannons(capacity),
+            data:     sudt_data.as_bytes(),
+        }
+    }
+
+    fn new_with_dec(capacity: u64, cap_dec: u32, amount: u128, amount_dec: u32) -> Self {
+        let capacity = capacity * 10u64.pow(cap_dec);
+        let sudt_data: Uint128 = (amount * 10u128.pow(amount_dec)).pack();
+
+        SudtCell {
+            capacity: Capacity::shannons(capacity),
+            data:     sudt_data.as_bytes(),
+        }
+    }
+}
+
+struct FreeCell {
+    capacity: Capacity,
+}
+
+impl FreeCell {
+    fn new(capacity: u64) -> Self {
+        FreeCell {
+            capacity: Capacity::shannons(capacity),
+        }
+    }
+}
+
+enum OrderInput {
+    Order {
+        cell_deps: Option<Vec<CellDep>>,
+        cell:      OrderCell,
+        lock_args: Option<Bytes>,
+        witness:   Option<Bytes>,
+    },
+    AnyUnlock {
+        cell_deps: Option<Vec<CellDep>>,
+        cell:      FreeCell,
+        lock:      Script,
+        witness:   Bytes,
+    },
+}
+
+impl OrderInput {
+    pub fn new_order(cell: OrderCell) -> Self {
+        OrderInput::Order {
+            cell_deps: None,
+            cell,
+            lock_args: None,
+            witness: None,
+        }
+    }
+}
+
+enum OrderOutput {
+    PartialFilledOrder(OrderCell),
+    Sudt(SudtCell),
+    #[allow(dead_code)]
+    Free(FreeCell),
+}
+
+fn build_tx(
+    context: &mut Context,
+    input_orders: Vec<OrderInput>,
+    output_results: Vec<OrderOutput>,
+) -> TransactionView {
+    // Deploy asset order lockscript
+    let asset_lock_bin: Bytes = Loader::default().load_binary("asset-order-lockscript");
+    let asset_lock_out_point = context.deploy_cell(asset_lock_bin);
+    let asset_lock_dep = CellDep::new_builder()
+        .out_point(asset_lock_out_point.clone())
+        .build();
+
+    // Deploy always sucess script
+    let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
+    let always_success_dep = CellDep::new_builder()
+        .out_point(always_success_out_point.clone())
+        .build();
+
+    // Always success lock script
+    let always_success_lock_script = context
+        .build_script(&always_success_out_point, Default::default())
+        .expect("always success lock script");
+
+    // Use always success as test sudt type contract
+    let sudt_type_script = always_success_lock_script;
+
+    // Pass idx as args to always success lock script to mock different user lock script
+    let create_user_lock_script = |context: &mut Context, idx: usize| -> (Script, Bytes) {
+        let user_lock_script = {
+            let args = Bytes::from(idx.to_le_bytes().to_vec());
+            context
+                .build_script(&always_success_out_point, args)
+                .expect("user lock script")
+        };
+        let hash = user_lock_script.calc_script_hash().as_bytes();
+        (user_lock_script, hash)
+    };
+
+    // Prepare inputs
+    let mut inputs = vec![];
+    let mut witnesses = vec![];
+    let mut cell_deps: Vec<CellDep> = vec![];
+    for (idx, order_input) in input_orders.into_iter().enumerate() {
+        match order_input {
+            OrderInput::Order {
+                cell_deps: opt_cell_deps,
+                cell,
+                lock_args: opt_args,
+                witness: opt_witness,
+            } => {
+                let hash = opt_args.unwrap_or_else(|| {
+                    let (_, hash) = create_user_lock_script(context, idx);
+                    hash
+                });
+
+                let asset_lock_script = context
+                    .build_script(&asset_lock_out_point, hash)
+                    .expect("asset lock script");
+
+                let input_out_point = context.create_cell(
+                    CellOutput::new_builder()
+                        .capacity(cell.capacity.pack())
+                        .lock(asset_lock_script.clone())
+                        .type_(Some(sudt_type_script.clone()).pack())
+                        .build(),
+                    cell.data,
+                );
+
+                let input = CellInput::new_builder()
+                    .previous_output(input_out_point)
+                    .build();
+
+                cell_deps.extend(opt_cell_deps.unwrap_or_default());
+                inputs.push(input);
+                witnesses.push(opt_witness.unwrap_or_default());
+            }
+            OrderInput::AnyUnlock {
+                cell_deps: opt_cell_deps,
+                cell,
+                lock,
+                witness,
+            } => {
+                let input_out_point = context.create_cell(
+                    CellOutput::new_builder()
+                        .capacity(cell.capacity.pack())
+                        .lock(lock)
+                        .build(),
+                    Bytes::new(),
+                );
+
+                let input = CellInput::new_builder()
+                    .previous_output(input_out_point)
+                    .build();
+
+                cell_deps.extend(opt_cell_deps.unwrap_or_default());
+                inputs.push(input);
+                witnesses.push(witness);
+            }
+        }
+    }
+
+    let mut outputs = vec![];
+    let mut outputs_data = vec![];
+    for (idx, order_result) in output_results.into_iter().enumerate() {
+        let (user_lock_script, hash) = create_user_lock_script(context, idx);
+
+        let (output, data) = match order_result {
+            OrderOutput::PartialFilledOrder(order) => {
+                let asset_lock_script = context
+                    .build_script(&asset_lock_out_point, hash)
+                    .expect("asset lock script");
+
+                let output = CellOutput::new_builder()
+                    .capacity(order.capacity.pack())
+                    .type_(Some(sudt_type_script.clone()).pack())
+                    .lock(asset_lock_script)
+                    .build();
+
+                (output, order.data)
+            }
+            OrderOutput::Sudt(sudt) => {
+                let output = CellOutput::new_builder()
+                    .capacity(sudt.capacity.pack())
+                    .type_(Some(sudt_type_script.clone()).pack())
+                    .lock(user_lock_script)
+                    .build();
+
+                (output, sudt.data)
+            }
+            OrderOutput::Free(free) => {
+                let output = CellOutput::new_builder()
+                    .capacity(free.capacity.pack())
+                    .lock(user_lock_script)
+                    .build();
+                (output, Bytes::new())
+            }
+        };
+
+        outputs.push(output);
+        outputs_data.push(data);
+    }
+
+    let tx = TransactionBuilder::default()
+        .inputs(inputs)
+        .outputs(outputs)
+        .outputs_data(outputs_data.pack())
+        .cell_dep(asset_lock_dep)
+        .cell_dep(always_success_dep)
+        .cell_deps(cell_deps)
+        .witnesses(witnesses.pack())
+        .build();
+
+    tx
+}
+
+fn build_test_context(
+    input_orders: Vec<OrderInput>,
+    output_results: Vec<OrderOutput>,
+) -> (Context, TransactionView) {
+    let mut context = Context::default();
+    let tx = build_tx(&mut context, input_orders, output_results);
+    (context, tx)
 }
 
 struct Secp256k1Lock;
