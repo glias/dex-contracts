@@ -26,7 +26,7 @@ const ERR_DATA_SIZE_CHANGED: i8 = 15;
 const ERR_ORDER_AMOUNT_IS_ZERO: i8 = 16;
 const ERR_NOT_A_SUDT_CELL: i8 = 17;
 const ERR_NOT_A_FREE_CELL: i8 = 18;
-const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 22;
+const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 21;
 
 // secp256k1_blake160_sighash_all lock error code
 const ERR_SECP256K1_WRONG_KEY: i8 = -31;

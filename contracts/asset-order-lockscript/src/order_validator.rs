@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use core::convert::TryFrom;
+use core::ops::Deref;
 use core::result::Result;
 
 use ckb_std::ckb_types::{bytes::Bytes, packed::Script};
@@ -115,22 +116,30 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     }
 
     match input_order.type_ {
-        OrderType::SellCKB => {
-            validate_sell_ckb_price(&input, &output, order_state == OrderState::SellCKBCompleted)
-        }
-        OrderType::BuyCKB => {
-            validate_buy_ckb_price(&input, &output, order_state == OrderState::BuyCKBCompleted)
-        }
+        OrderType::SellCKB => validate_sell_ckb_price(
+            &input.checked(),
+            &output.checked(),
+            order_state == OrderState::SellCKBCompleted,
+        ),
+        OrderType::BuyCKB => validate_buy_ckb_price(
+            &input.checked(),
+            &output.checked(),
+            order_state == OrderState::BuyCKBCompleted,
+        ),
     }
 }
 
-fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
+fn validate_sell_ckb_price(
+    input: &CheckedCell,
+    output: &CheckedCell,
+    completed: bool,
+) -> Result<(), Error> {
     if output.capacity > input.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
 
-    let input_sudt_amount = input.sudt_amount()?;
-    let output_sudt_amount = output.sudt_amount()?;
+    let input_sudt_amount = input.sudt_amount();
+    let output_sudt_amount = output.sudt_amount();
     if output_sudt_amount == 0 || output_sudt_amount < input_sudt_amount {
         return Err(Error::NegativeSudtDifference);
     }
@@ -173,17 +182,21 @@ fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resu
     Ok(())
 }
 
-fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
+fn validate_buy_ckb_price(
+    input: &CheckedCell,
+    output: &CheckedCell,
+    completed: bool,
+) -> Result<(), Error> {
     if input.capacity > output.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
 
-    let input_sudt_amount = input.sudt_amount()?;
+    let input_sudt_amount = input.sudt_amount();
     if input_sudt_amount == 0 {
         return Err(Error::InputSudtIsZero);
     }
 
-    let output_sudt_amount = output.sudt_amount().unwrap_or_else(|_| 0);
+    let output_sudt_amount = output.sudt_amount();
     if output_sudt_amount > input_sudt_amount {
         return Err(Error::NegativeSudtDifference);
     }
@@ -382,13 +395,30 @@ impl Cell {
         Order::try_from(self.data.as_slice())
     }
 
-    pub fn sudt_amount(&self) -> Result<u128, Error> {
+    pub fn checked(self) -> CheckedCell {
+        CheckedCell(self)
+    }
+}
+
+#[derive(Debug)]
+struct CheckedCell(Cell);
+
+impl CheckedCell {
+    pub fn sudt_amount(&self) -> u128 {
         if self.data.len() < 16 {
-            return Err(Error::DataSizeSmallerThanSudt);
+            return 0;
         }
 
         let mut buf = [0u8; 16];
         buf.copy_from_slice(&self.data.as_slice()[0..16]);
-        Ok(u128::from_le_bytes(buf))
+        u128::from_le_bytes(buf)
+    }
+}
+
+impl Deref for CheckedCell {
+    type Target = Cell;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
