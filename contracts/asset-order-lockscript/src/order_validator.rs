@@ -43,6 +43,189 @@ pub fn validate() -> Result<(), Error> {
     Ok(())
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum OrderState {
+    PartialFilled,
+    SellCKBCompleted,
+    BuyCKBCompleted,
+}
+
+fn validate_order_cells(index: usize) -> Result<(), Error> {
+    let input = Cell::load(index, Source::Input)?;
+    let output = Cell::load(index, Source::Output)?;
+
+    let input_order = input.to_order()?;
+    if input_order.order_amount == 0 {
+        return Err(Error::OrderAmountIsZero);
+    }
+
+    let user_lock_hash: Bytes = input.lock_script.args().unpack();
+    let order_state = if output.lock_hash == input.lock_hash {
+        OrderState::PartialFilled
+    } else if output.lock_hash == &user_lock_hash[..] {
+        match input_order.type_ {
+            OrderType::SellCKB => OrderState::SellCKBCompleted,
+            OrderType::BuyCKB => OrderState::BuyCKBCompleted,
+        }
+    } else {
+        return Err(Error::UnknownOutputLock);
+    };
+
+    if order_state == OrderState::PartialFilled {
+        if output.type_hash() != input.type_hash() {
+            return Err(Error::TypeHashChanged);
+        }
+
+        if output.data.len() != input.data.len() {
+            return Err(Error::DataSizeChanged);
+        }
+
+        let output_order = output.to_order()?;
+        if output_order.price != input_order.price {
+            return Err(Error::PriceChanged);
+        }
+
+        if output_order.type_ != input_order.type_ {
+            return Err(Error::OrderTypeChanged);
+        }
+
+        if output_order.order_amount == 0 {
+            return Err(Error::OrderAmountIsZero);
+        }
+    }
+
+    if order_state == OrderState::SellCKBCompleted {
+        if output.type_hash() != input.type_hash() {
+            return Err(Error::TypeHashChanged);
+        }
+
+        if output.data.len() < 16 {
+            return Err(Error::NotASudtCell);
+        }
+    }
+
+    if order_state == OrderState::BuyCKBCompleted {
+        match output.type_hash()? {
+            // If we can't buy more ckb with given order price, we allow this order to complete.
+            // We should have a sudt cell here.
+            Some(_sudt_type) if output.data.len() < 16 => return Err(Error::NotASudtCell),
+            None if output.data.len() != 0 => return Err(Error::NotAFreeCell),
+            _ => (),
+        }
+    }
+
+    match input_order.type_ {
+        OrderType::SellCKB => {
+            validate_sell_ckb_price(&input, &output, order_state == OrderState::SellCKBCompleted)
+        }
+        OrderType::BuyCKB => {
+            validate_buy_ckb_price(&input, &output, order_state == OrderState::BuyCKBCompleted)
+        }
+    }
+}
+
+fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
+    if output.capacity > input.capacity {
+        return Err(Error::NegativeCapacityDifference);
+    }
+
+    let input_sudt_amount = input.sudt_amount()?;
+    let output_sudt_amount = output.sudt_amount()?;
+    if output_sudt_amount == 0 || output_sudt_amount < input_sudt_amount {
+        return Err(Error::NegativeSudtDifference);
+    }
+
+    let ckb_sold = input.capacity - output.capacity;
+    let sudt_got = output_sudt_amount - input_sudt_amount;
+
+    let order = input.to_order()?;
+    let price_exponent = order.price.biguint_exponent();
+    let price_effect = order.price.biguint_effect();
+    if order.price.is_exponent_negative() {
+        if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold * price_exponent.clone()
+            > BigUint::from(FEE_DECIMAL) * sudt_got * price_effect.clone()
+        {
+            return Err(Error::PriceMismatch);
+        }
+    } else {
+        let price = price_exponent.clone() * price_effect.clone();
+
+        if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold
+            > BigUint::from(FEE_DECIMAL) * sudt_got * price
+        {
+            return Err(Error::PriceMismatch);
+        }
+    }
+
+    if completed {
+        // Only allow 99% filled order to complete when it can't sell more
+        // ckb with this price.
+        let remained = BigUint::from(order.order_amount - sudt_got);
+        if order.price.is_exponent_negative() {
+            if remained * price_exponent > price_effect {
+                return Err(Error::CompleteMatchableOrder);
+            }
+        } else if remained > price_exponent * price_effect {
+            return Err(Error::CompleteMatchableOrder);
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
+    if input.capacity > output.capacity {
+        return Err(Error::NegativeCapacityDifference);
+    }
+
+    let input_sudt_amount = input.sudt_amount()?;
+    if input_sudt_amount == 0 {
+        return Err(Error::InputSudtIsZero);
+    }
+
+    let output_sudt_amount = output.sudt_amount().unwrap_or_else(|_| 0);
+    if output_sudt_amount > input_sudt_amount {
+        return Err(Error::NegativeSudtDifference);
+    }
+
+    let ckb_bought: u64 = output.capacity - input.capacity;
+    let sudt_paid = input_sudt_amount - output_sudt_amount;
+
+    let order = input.to_order()?;
+    let price_exponent = order.price.biguint_exponent();
+    let price_effect = order.price.biguint_effect();
+    if order.price.is_exponent_negative() {
+        if BigUint::from(FEE_DECIMAL) * ckb_bought * price_exponent.clone()
+            < BigUint::from(FEE_DECIMAL - FEE) * sudt_paid * price_effect.clone()
+        {
+            return Err(Error::PriceMismatch);
+        }
+    } else {
+        let price = price_exponent.clone() * price_effect.clone();
+
+        if BigUint::from(FEE_DECIMAL) * ckb_bought
+            < BigUint::from(FEE_DECIMAL - FEE) * price * sudt_paid
+        {
+            return Err(Error::PriceMismatch);
+        }
+    }
+
+    if completed {
+        // Only allow 99% filled order to complete when it can't buy more ckb
+        // with this price.
+        let remained = BigUint::from(order.order_amount - u128::from(ckb_bought));
+        if order.price.is_exponent_negative() {
+            if remained * price_exponent > price_effect {
+                return Err(Error::CompleteMatchableOrder);
+            }
+        } else if remained > price_exponent * price_effect {
+            return Err(Error::CompleteMatchableOrder);
+        }
+    }
+
+    Ok(())
+}
+
 #[derive(Debug)]
 struct Price {
     effect:   u64,
@@ -207,188 +390,5 @@ impl Cell {
         let mut buf = [0u8; 16];
         buf.copy_from_slice(&self.data.as_slice()[0..16]);
         Ok(u128::from_le_bytes(buf))
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-enum OrderState {
-    PartialFilled,
-    SellCKBCompleted,
-    BuyCKBCompleted,
-}
-
-fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
-    if output.capacity > input.capacity {
-        return Err(Error::NegativeCapacityDifference);
-    }
-
-    let input_sudt_amount = input.sudt_amount()?;
-    let output_sudt_amount = output.sudt_amount()?;
-    if output_sudt_amount == 0 || output_sudt_amount < input_sudt_amount {
-        return Err(Error::NegativeSudtDifference);
-    }
-
-    let ckb_sold = input.capacity - output.capacity;
-    let sudt_got = output_sudt_amount - input_sudt_amount;
-
-    let order = input.to_order()?;
-    let price_exponent = order.price.biguint_exponent();
-    let price_effect = order.price.biguint_effect();
-    if order.price.is_exponent_negative() {
-        if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold * price_exponent.clone()
-            > BigUint::from(FEE_DECIMAL) * sudt_got * price_effect.clone()
-        {
-            return Err(Error::PriceMismatch);
-        }
-    } else {
-        let price = price_exponent.clone() * price_effect.clone();
-
-        if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold
-            > BigUint::from(FEE_DECIMAL) * sudt_got * price
-        {
-            return Err(Error::PriceMismatch);
-        }
-    }
-
-    if completed {
-        // Only allow 99% filled order to complete when it can't sell more
-        // ckb with this price.
-        let remained = BigUint::from(order.order_amount - sudt_got);
-        if order.price.is_exponent_negative() {
-            if remained * price_exponent > price_effect {
-                return Err(Error::CompleteMatchableOrder);
-            }
-        } else if remained > price_exponent * price_effect {
-            return Err(Error::CompleteMatchableOrder);
-        }
-    }
-
-    Ok(())
-}
-
-fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
-    if input.capacity > output.capacity {
-        return Err(Error::NegativeCapacityDifference);
-    }
-
-    let input_sudt_amount = input.sudt_amount()?;
-    if input_sudt_amount == 0 {
-        return Err(Error::InputSudtIsZero);
-    }
-
-    let output_sudt_amount = output.sudt_amount().unwrap_or_else(|_| 0);
-    if output_sudt_amount > input_sudt_amount {
-        return Err(Error::NegativeSudtDifference);
-    }
-
-    let ckb_bought: u64 = output.capacity - input.capacity;
-    let sudt_paid = input_sudt_amount - output_sudt_amount;
-
-    let order = input.to_order()?;
-    let price_exponent = order.price.biguint_exponent();
-    let price_effect = order.price.biguint_effect();
-    if order.price.is_exponent_negative() {
-        if BigUint::from(FEE_DECIMAL) * ckb_bought * price_exponent.clone()
-            < BigUint::from(FEE_DECIMAL - FEE) * sudt_paid * price_effect.clone()
-        {
-            return Err(Error::PriceMismatch);
-        }
-    } else {
-        let price = price_exponent.clone() * price_effect.clone();
-
-        if BigUint::from(FEE_DECIMAL) * ckb_bought
-            < BigUint::from(FEE_DECIMAL - FEE) * price * sudt_paid
-        {
-            return Err(Error::PriceMismatch);
-        }
-    }
-
-    if completed {
-        // Only allow 99% filled order to complete when it can't buy more ckb
-        // with this price.
-        let remained = BigUint::from(order.order_amount - u128::from(ckb_bought));
-        if order.price.is_exponent_negative() {
-            if remained * price_exponent > price_effect {
-                return Err(Error::CompleteMatchableOrder);
-            }
-        } else if remained > price_exponent * price_effect {
-            return Err(Error::CompleteMatchableOrder);
-        }
-    }
-
-    Ok(())
-}
-
-fn validate_order_cells(index: usize) -> Result<(), Error> {
-    let input = Cell::load(index, Source::Input)?;
-    let output = Cell::load(index, Source::Output)?;
-
-    let input_order = input.to_order()?;
-    if input_order.order_amount == 0 {
-        return Err(Error::OrderAmountIsZero);
-    }
-
-    let user_lock_hash: Bytes = input.lock_script.args().unpack();
-    let order_state = if output.lock_hash == input.lock_hash {
-        OrderState::PartialFilled
-    } else if output.lock_hash == &user_lock_hash[..] {
-        match input_order.type_ {
-            OrderType::SellCKB => OrderState::SellCKBCompleted,
-            OrderType::BuyCKB => OrderState::BuyCKBCompleted,
-        }
-    } else {
-        return Err(Error::UnknownOutputLock);
-    };
-
-    if order_state == OrderState::PartialFilled {
-        if output.type_hash() != input.type_hash() {
-            return Err(Error::TypeHashChanged);
-        }
-
-        if output.data.len() != input.data.len() {
-            return Err(Error::DataSizeChanged);
-        }
-
-        let output_order = output.to_order()?;
-        if output_order.price != input_order.price {
-            return Err(Error::PriceChanged);
-        }
-
-        if output_order.type_ != input_order.type_ {
-            return Err(Error::OrderTypeChanged);
-        }
-
-        if output_order.order_amount == 0 {
-            return Err(Error::OrderAmountIsZero);
-        }
-    }
-
-    if order_state == OrderState::SellCKBCompleted {
-        if output.type_hash() != input.type_hash() {
-            return Err(Error::TypeHashChanged);
-        }
-
-        if output.data.len() < 16 {
-            return Err(Error::NotASudtCell);
-        }
-    }
-
-    if order_state == OrderState::BuyCKBCompleted {
-        match output.type_hash()? {
-            // If we can't buy more ckb with given order price, we allow this order to complete.
-            // We should have a sudt cell here.
-            Some(_sudt_type) if output.data.len() < 16 => return Err(Error::NotASudtCell),
-            None if output.data.len() != 0 => return Err(Error::NotAFreeCell),
-            _ => (),
-        }
-    }
-
-    match input_order.type_ {
-        OrderType::SellCKB => {
-            validate_sell_ckb_price(&input, &output, order_state == OrderState::SellCKBCompleted)
-        }
-        OrderType::BuyCKB => {
-            validate_buy_ckb_price(&input, &output, order_state == OrderState::BuyCKBCompleted)
-        }
     }
 }
