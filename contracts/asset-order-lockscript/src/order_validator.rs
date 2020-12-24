@@ -74,20 +74,20 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
 
     if order_state == OrderState::PartialFilled {
         if output.type_hash() != input.type_hash() {
-            return Err(Error::TypeHashChanged);
+            return Err(Error::OutputTypeHashChanged);
         }
 
         if output.data.len() != input.data.len() {
-            return Err(Error::DataSizeChanged);
+            return Err(Error::OutputOrderDataSizeChanged);
         }
 
         let output_order = output.to_order()?;
         if output_order.price != input_order.price {
-            return Err(Error::PriceChanged);
+            return Err(Error::OutputOrderPriceChanged);
         }
 
         if output_order.type_ != input_order.type_ {
-            return Err(Error::OrderTypeChanged);
+            return Err(Error::OutputOrderTypeChanged);
         }
 
         if output_order.order_amount == 0 {
@@ -97,11 +97,11 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
 
     if order_state == OrderState::SellCKBCompleted {
         if output.type_hash() != input.type_hash() {
-            return Err(Error::TypeHashChanged);
+            return Err(Error::OutputTypeHashChanged);
         }
 
         if output.data.len() < 16 {
-            return Err(Error::NotASudtCell);
+            return Err(Error::OutputNotASudtCell);
         }
     }
 
@@ -109,8 +109,8 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
         match output.type_hash()? {
             // If we can't buy more ckb with given order price, we allow this order to complete.
             // We should have a sudt cell here.
-            Some(_sudt_type) if output.data.len() < 16 => return Err(Error::NotASudtCell),
-            None if output.data.len() != 0 => return Err(Error::NotAFreeCell),
+            Some(_sudt_type) if output.data.len() < 16 => return Err(Error::OutputNotASudtCell),
+            None if output.data.len() != 0 => return Err(Error::OutputNotAFreeCell),
             _ => (),
         }
     }
@@ -193,7 +193,7 @@ fn validate_buy_ckb_price(
 
     let input_sudt_amount = input.sudt_amount();
     if input_sudt_amount == 0 {
-        return Err(Error::InputSudtIsZero);
+        return Err(Error::BuyCKBOrderSudtAmountIsZero);
     }
 
     let output_sudt_amount = output.sudt_amount();
@@ -255,7 +255,7 @@ impl TryFrom<[u8; PRICE_BYTES_LEN]> for Price {
             u64::from_le_bytes(buf)
         };
         if effect == 0 {
-            return Err(Error::PriceIsZero);
+            return Err(Error::OrderPriceIsZero);
         }
 
         let exponent = {
@@ -354,7 +354,7 @@ impl TryFrom<&[u8]> for Order {
         };
 
         if order.version != VERSION {
-            return Err(Error::UnexpectedVersion);
+            return Err(Error::UnexpectedOrderVersion);
         }
 
         Ok(order)

@@ -8,24 +8,25 @@ pub enum Error {
     ItemMissing,
     LengthNotEnough,
     Encoding,
-    // Add customized errors here...
+
+    // Input Order
     WrongUserLockHashSize = 5,
     CancelOrderWithoutWitness,
     WrongOrderDataSize,
-    PriceIsZero,
+    OrderPriceIsZero,
     UnknownOrderType,
-    UnexpectedVersion = 10,
+    UnexpectedOrderVersion = 10,
 
     // Order deal
     UnknownOutputLock = 11,
-    TypeHashChanged,
-    PriceChanged,
-    OrderTypeChanged,
-    DataSizeChanged = 15,
+    OutputTypeHashChanged,
+    OutputOrderPriceChanged,
+    OutputOrderTypeChanged,
+    OutputOrderDataSizeChanged = 15,
     OrderAmountIsZero,
-    NotASudtCell,
-    NotAFreeCell,
-    InputSudtIsZero,
+    OutputNotASudtCell, // Data size should be equal or more than 16
+    OutputNotAFreeCell, // Data size should be zero
+    BuyCKBOrderSudtAmountIsZero,
     NegativeSudtDifference = 20,
     NegativeCapacityDifference,
     PriceMismatch,

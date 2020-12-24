@@ -15,17 +15,17 @@ const MAX_CYCLES: u64 = 10000_0000;
 
 const ERR_WRONG_USER_LOCK_HASH_SIZE: i8 = 5;
 const ERR_WRONG_ORDER_DATA_SIZE: i8 = 7;
-const ERR_PRICE_IS_ZERO: i8 = 8;
+const ERR_ORDER_PRICE_IS_ZERO: i8 = 8;
 const ERR_UNKNOWN_ORDER_TYPE: i8 = 9;
-const ERR_UNEXPECTED_VERSION: i8 = 10;
+const ERR_UNEXPECTED_ORDER_VERSION: i8 = 10;
 const ERR_UNKNOWN_OUTPUT_LOCK: i8 = 11;
-const ERR_TYPE_HASH_CHANGED: i8 = 12;
-const ERR_PRICE_CHANGED: i8 = 13;
-const ERR_ORDER_TYPE_CHANGED: i8 = 14;
-const ERR_DATA_SIZE_CHANGED: i8 = 15;
+const ERR_OUTPUT_TYPE_HASH_CHANGED: i8 = 12;
+const ERR_OUTPUT_PRICE_CHANGED: i8 = 13;
+const ERR_OUTPUT_ORDER_TYPE_CHANGED: i8 = 14;
+const ERR_OUTPUT_DATA_SIZE_CHANGED: i8 = 15;
 const ERR_ORDER_AMOUNT_IS_ZERO: i8 = 16;
-const ERR_NOT_A_SUDT_CELL: i8 = 17;
-const ERR_NOT_A_FREE_CELL: i8 = 18;
+const ERR_OUTPUT_NOT_A_SUDT_CELL: i8 = 17;
+const ERR_OUTPUT_NOT_A_FREE_CELL: i8 = 18;
 const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 21;
 
 // secp256k1_blake160_sighash_all lock error code
@@ -85,7 +85,7 @@ fn test_order_price_is_zero() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_PRICE_IS_ZERO, 0));
+    assert_error_eq!(err, tx_error(ERR_ORDER_PRICE_IS_ZERO, 0));
 }
 
 #[test]
@@ -128,7 +128,7 @@ fn test_unexpected_version() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_UNEXPECTED_VERSION, 0));
+    assert_error_eq!(err, tx_error(ERR_UNEXPECTED_ORDER_VERSION, 0));
 }
 
 #[test]
@@ -183,7 +183,7 @@ fn test_partial_filled_type_hash_changed() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_TYPE_HASH_CHANGED, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_TYPE_HASH_CHANGED, 0));
 }
 
 #[test]
@@ -212,7 +212,7 @@ fn test_partial_filled_price_changed() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_PRICE_CHANGED, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_PRICE_CHANGED, 0));
 }
 
 #[test]
@@ -241,7 +241,7 @@ fn test_partial_filled_order_type_changed() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_ORDER_TYPE_CHANGED, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_ORDER_TYPE_CHANGED, 0));
 }
 
 #[test]
@@ -262,7 +262,7 @@ fn test_partial_filled_data_size_changed() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_DATA_SIZE_CHANGED, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_DATA_SIZE_CHANGED, 0));
 }
 
 #[test]
@@ -313,7 +313,7 @@ fn test_type_hash_changed_output_from_completed_sell_ckb_order() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_TYPE_HASH_CHANGED, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_TYPE_HASH_CHANGED, 0));
 }
 
 #[test]
@@ -334,7 +334,7 @@ fn test_not_a_sudt_cell_output_from_completed_sell_ckb_order() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NOT_A_SUDT_CELL, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_SUDT_CELL, 0));
 }
 
 #[test]
@@ -355,7 +355,7 @@ fn test_not_a_sudt_cell_output_from_completed_buy_ckb_order() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NOT_A_SUDT_CELL, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_SUDT_CELL, 0));
 }
 
 #[test]
@@ -379,7 +379,7 @@ fn test_not_a_free_cell_output_from_completed_buy_ckb_order() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NOT_A_FREE_CELL, 0));
+    assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_FREE_CELL, 0));
 }
 
 #[test]
