@@ -177,6 +177,7 @@ fn validate_sell_ckb_price(
     let price_exponent = order.price.biguint_exponent();
     let price_effect = order.price.biguint_effect();
     if order.price.is_exponent_negative() {
+        // Require (ckb_sold * 997 / 1000) / sudt_got <= price_effect / price_exponent
         if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold * price_exponent.clone()
             > BigUint::from(FEE_DECIMAL) * sudt_got * price_effect.clone()
         {
@@ -185,6 +186,7 @@ fn validate_sell_ckb_price(
     } else {
         let price = price_exponent.clone() * price_effect.clone();
 
+        // Require (ckb_sold * 997 / 1000) / sudt_got <= price_effect * price_exponent
         if BigUint::from(FEE_DECIMAL - FEE) * ckb_sold
             > BigUint::from(FEE_DECIMAL) * sudt_got * price
         {
@@ -240,6 +242,7 @@ fn validate_buy_ckb_price(
     let price_exponent = order.price.biguint_exponent();
     let price_effect = order.price.biguint_effect();
     if order.price.is_exponent_negative() {
+        // Require ckb_bought / (sudt_paid * 997 / 1000) >= price_effect / price_exponent
         if BigUint::from(FEE_DECIMAL) * ckb_bought * price_exponent.clone()
             < BigUint::from(FEE_DECIMAL - FEE) * sudt_paid * price_effect.clone()
         {
@@ -248,6 +251,7 @@ fn validate_buy_ckb_price(
     } else {
         let price = price_exponent.clone() * price_effect.clone();
 
+        // Require ckb_bought / (sudt_paid * 997 / 1000) >= price_effect * price_exponent
         if BigUint::from(FEE_DECIMAL) * ckb_bought
             < BigUint::from(FEE_DECIMAL - FEE) * price * sudt_paid
         {
