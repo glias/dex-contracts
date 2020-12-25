@@ -5,6 +5,7 @@ members = [
     "contracts/liquidity-lock-script",
     "contracts/info-type-script",
     "contracts/info-lock-script",
+    "ckb-contract-test-engine",
     "share"
 ]
 
