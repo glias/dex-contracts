@@ -11,31 +11,31 @@ pub enum Error {
 
     // Input Order
     WrongUserLockHashSize = 5,
-    CancelOrderWithoutWitness,
     WrongOrderDataSize,
     OrderPriceIsZero,
     UnknownOrderType,
-    UnexpectedOrderVersion = 10,
+    UnexpectedOrderVersion = 9,
 
     // Order deal
-    UnknownOutputLock = 11,
+    UnknownOutputLock = 10,
     OutputTypeHashChanged,
     OutputOrderPriceChanged,
     OutputOrderTypeChanged,
-    OutputOrderDataSizeChanged = 15,
-    OrderAmountIsZero,
+    OutputOrderDataSizeChanged,
+    OrderAmountIsZero = 15,
     OutputNotASudtCell, // Data size should be equal or more than 16
     OutputNotAFreeCell, // Data size should be zero
     BuyCKBOrderSudtAmountIsZero,
-    OutputSudtAmountIsZero = 20,
-    OutputBurnSudtAmount,
+    OutputSudtAmountIsZero,
+    OutputBurnSudtAmount = 20,
     NegativeSudtDifference,
     NegativeCapacityDifference,
     PriceMismatch,
-    OrderStillMatchable = 25,
+    OrderStillMatchable = 24,
 
     // Directly cancellation
-    UserLockNotFound = 26,
+    CancelOrderWithoutWitness = 25,
+    UserLockNotFound,
     UserLockScriptEncoding,
     UserLockHashNotMatch,
     UnknownUserLockHashType,
