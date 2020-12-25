@@ -32,7 +32,7 @@ pub enum Error {
     NegativeSudtDifference,
     NegativeCapacityDifference,
     PriceMismatch,
-    CompleteMatchableOrder = 25,
+    OrderStillMatchable = 25,
 
     // Directly cancellation
     UserLockNotFound = 26,

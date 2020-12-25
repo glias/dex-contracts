@@ -204,12 +204,12 @@ fn validate_sell_ckb_price(
         // Require (sellable_ckb * 997 / 1000) * Pe /PE < 1
         if order.price.is_exponent_negative() {
             if sellable_ckb * (FEE_DECIMAL - FEE) * price_exponent >= FEE_DECIMAL * price_effect {
-                return Err(Error::CompleteMatchableOrder);
+                return Err(Error::OrderStillMatchable);
             }
         // Require (sellable_ckb * 997 / 1000) / (Pe * PE) < 1
         } else if sellable_ckb * (FEE_DECIMAL - FEE) >= FEE_DECIMAL * price_effect * price_exponent
         {
-            return Err(Error::CompleteMatchableOrder);
+            return Err(Error::OrderStillMatchable);
         }
     }
 
@@ -270,7 +270,7 @@ fn validate_buy_ckb_price(
         if order.price.is_exponent_negative()
             && sellable_sudt * (FEE_DECIMAL - FEE) * price_effect >= price_exponent * FEE_DECIMAL
         {
-            return Err(Error::CompleteMatchableOrder);
+            return Err(Error::OrderStillMatchable);
         }
     }
 

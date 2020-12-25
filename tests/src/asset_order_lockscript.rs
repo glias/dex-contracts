@@ -32,7 +32,7 @@ const ERR_OUTPUT_BURN_SUDT_AMOUNT: i8 = 21;
 const ERR_NEGATIVE_SUDT_DIFFERENCE: i8 = 22;
 const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 23;
 const ERR_PRICE_MISMATCH: i8 = 24;
-const ERR_COMPLETE_MATCHABLE_ORDER: i8 = 25;
+const ERR_ORDER_STILL_MATCHABLE: i8 = 25;
 
 // secp256k1_blake160_sighash_all lock error code
 const ERR_SECP256K1_WRONG_KEY: i8 = -31;
@@ -647,7 +647,7 @@ fn test_err_buy_ckb_price_mismatch_price_exponent_is_positive() {
 }
 
 #[test]
-fn test_err_sell_ckb_complete_matchable_order_price_exponent_is_negative() {
+fn test_err_sell_ckb_order_still_matchable_price_exponent_is_negative() {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(555, 8)           // 555 ckb
@@ -666,11 +666,11 @@ fn test_err_sell_ckb_complete_matchable_order_price_exponent_is_negative() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_COMPLETE_MATCHABLE_ORDER, 0));
+    assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
 }
 
 #[test]
-fn test_err_sell_ckb_complete_matchable_order_price_exponent_is_postive() {
+fn test_err_sell_ckb_order_still_matchable_price_exponent_is_postive() {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(555, 8)           // 555 ckb
@@ -689,11 +689,11 @@ fn test_err_sell_ckb_complete_matchable_order_price_exponent_is_postive() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_COMPLETE_MATCHABLE_ORDER, 0));
+    assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
 }
 
 #[test]
-fn test_err_buy_ckb_complete_matchable_order() {
+fn test_err_buy_ckb_order_still_matchable() {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(200, 8)           // 200 ckb
@@ -711,7 +711,7 @@ fn test_err_buy_ckb_complete_matchable_order() {
     let tx = context.complete_tx(tx);
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_COMPLETE_MATCHABLE_ORDER, 0));
+    assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
 }
 
 #[test]
