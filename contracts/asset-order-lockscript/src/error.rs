@@ -27,23 +27,25 @@ pub enum Error {
     OutputNotASudtCell, // Data size should be equal or more than 16
     OutputNotAFreeCell, // Data size should be zero
     BuyCKBOrderSudtAmountIsZero,
-    NegativeSudtDifference = 20,
+    OutputSudtAmountIsZero = 20,
+    OutputBurnSudtAmount,
+    NegativeSudtDifference,
     NegativeCapacityDifference,
     PriceMismatch,
-    CompleteMatchableOrder,
+    CompleteMatchableOrder = 25,
 
     // Directly cancellation
-    UserLockNotFound = 24,
-    UserLockScriptEncoding = 25,
+    UserLockNotFound = 26,
+    UserLockScriptEncoding,
     UserLockHashNotMatch,
     UnknownUserLockHashType,
-    UserLockCellDepNotFound,
-    ValidationFunctionNotFound = 29,
+    UserLockCellDepNotFound = 30,
+    ValidationFunctionNotFound,
     DynamicLoadingContextFailure,
     DynamicLoadingInvalidElf,
     DynamicLoadingMemoryNotEnough,
-    DynamicLoadingCellNotFound,
-    DynamicLoadingInvalidAlign = 34,
+    DynamicLoadingCellNotFound = 35,
+    DynamicLoadingInvalidAlign,
 }
 
 impl From<SysError> for Error {

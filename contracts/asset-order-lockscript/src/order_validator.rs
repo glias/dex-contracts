@@ -23,6 +23,12 @@ const ORDER_DATA_LEN: usize = 43;
 const PRICE_BYTES_LEN: usize = 9;
 const VERSION: u8 = 1;
 
+// capacity: 8 bytes
+// data: 16 bytes
+// type: 65 bytes
+// lock: 65 bytes
+const SUDT_CELL_SIZE: u64 = 154_00_000_000; // shannons, 154 ckb
+
 pub fn validate() -> Result<(), Error> {
     // Find inputs in current group
     let orders = QueryIter::new(load_input, Source::GroupInput).collect::<Vec<_>>();
@@ -53,7 +59,7 @@ enum OrderState {
 
 fn validate_order_cells(index: usize) -> Result<(), Error> {
     let input = Cell::load(index, Source::Input)?;
-    let output = Cell::load(index, Source::Output)?;
+    let mut output = Cell::load(index, Source::Output)?;
 
     let input_order = input.to_order()?;
     if input_order.order_amount == 0 {
@@ -96,12 +102,32 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     }
 
     if order_state == OrderState::SellCKBCompleted {
-        if output.type_hash() != input.type_hash() {
-            return Err(Error::OutputTypeHashChanged);
-        }
+        match output.type_hash()? {
+            Some(output_type_hash) => {
+                if Some(output_type_hash) != input.type_hash()? {
+                    return Err(Error::OutputTypeHashChanged);
+                }
 
-        if output.data.len() < 16 {
-            return Err(Error::OutputNotASudtCell);
+                if output.data.len() < 16 {
+                    return Err(Error::OutputNotASudtCell);
+                }
+
+                // In this case, output should be a free cell
+                let checked_output = output.checked();
+                if checked_output.sudt_amount() == 0 {
+                    return Err(Error::OutputSudtAmountIsZero);
+                }
+                output = checked_output.0;
+            }
+            None => {
+                if output.data.len() != 0 {
+                    return Err(Error::OutputNotAFreeCell);
+                }
+
+                if input_order.sudt_amount != 0 {
+                    return Err(Error::OutputBurnSudtAmount);
+                }
+            }
         }
     }
 
@@ -140,7 +166,7 @@ fn validate_sell_ckb_price(
 
     let input_sudt_amount = input.sudt_amount();
     let output_sudt_amount = output.sudt_amount();
-    if output_sudt_amount == 0 || output_sudt_amount < input_sudt_amount {
+    if output_sudt_amount < input_sudt_amount {
         return Err(Error::NegativeSudtDifference);
     }
 
@@ -166,15 +192,21 @@ fn validate_sell_ckb_price(
         }
     }
 
-    if completed {
-        // Only allow 99% filled order to complete when it can't sell more
-        // ckb with this price.
-        let remained = BigUint::from(order.order_amount - sudt_got);
+    let remained = order.order_amount - sudt_got;
+    if completed && remained >= 1 {
+        let sellable_ckb = BigUint::from(output.capacity - SUDT_CELL_SIZE);
+
+        // Verify that we cannot sell more ckb to buy at least 1 sudt(smallest decimal)
+        // PE as price effect
+        // Pe as price exponent
+        // Require (sellable_ckb * 997 / 1000) * Pe /PE < 1
         if order.price.is_exponent_negative() {
-            if remained * price_exponent > price_effect {
+            if sellable_ckb * (FEE_DECIMAL - FEE) * price_exponent >= FEE_DECIMAL * price_effect {
                 return Err(Error::CompleteMatchableOrder);
             }
-        } else if remained > price_exponent * price_effect {
+        // Require (sellable_ckb * 997 / 1000) / (Pe * PE) < 1
+        } else if sellable_ckb * (FEE_DECIMAL - FEE) >= FEE_DECIMAL * price_effect * price_exponent
+        {
             return Err(Error::CompleteMatchableOrder);
         }
     }
@@ -223,15 +255,17 @@ fn validate_buy_ckb_price(
         }
     }
 
-    if completed {
-        // Only allow 99% filled order to complete when it can't buy more ckb
-        // with this price.
-        let remained = BigUint::from(order.order_amount - u128::from(ckb_bought));
-        if order.price.is_exponent_negative() {
-            if remained * price_exponent > price_effect {
-                return Err(Error::CompleteMatchableOrder);
-            }
-        } else if remained > price_exponent * price_effect {
+    let remained = order.order_amount - u128::from(ckb_bought);
+    if completed && remained >= 1 {
+        // Verify that we can't buy even 1 ckb shannon
+        let sellable_sudt = BigUint::from(output_sudt_amount);
+
+        // PE as price effect
+        // Pe as price exponent
+        // Require (sellable_sudt * 997 / 1000) * PE / Pe < 1
+        if order.price.is_exponent_negative()
+            && sellable_sudt * (FEE_DECIMAL - FEE) * price_effect >= price_exponent * FEE_DECIMAL
+        {
             return Err(Error::CompleteMatchableOrder);
         }
     }
