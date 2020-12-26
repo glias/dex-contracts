@@ -7,6 +7,7 @@ const ERR_USER_LOCK_SCRIPT_ENCODING: i8 = 27;
 const ERR_USER_LOCK_HASH_NOT_MATCH: i8 = 28;
 const ERR_UNKNOWN_USER_LOCK_HASH_TYPE: i8 = 29;
 const ERR_USER_LOCK_CELL_DEP_NOT_FOUND: i8 = 30;
+const ERR_DYNAMIC_LOADING_MEMORY_NOT_ENOUGH: i8 = 34;
 
 // secp256k1_blake160_sighash_all lock error code
 const ERR_SECP256K1_WRONG_KEY: i8 = -31;
@@ -483,4 +484,58 @@ fn test_err_directly_cancel_user_lock_cell_dep_not_found() {
     let tx = test_tool::secp256k1_keccak256::sign_tx(tx, &privkey);
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_USER_LOCK_CELL_DEP_NOT_FOUND, 0));
+}
+
+#[test]
+fn test_err_directly_cancel_order_using_witness_dynamic_loding() {
+    // generate key pair
+    let privkey = Generator::random_privkey();
+    let pubkey = privkey.pubkey().expect("pubkey");
+    let eth_pubkey = DynLock::eth_pubkey(pubkey);
+
+    let mut context = Context::default();
+
+    // Deploy dependencies
+    //  Error: use lock script which doesn't support dynamic loading
+    let (_secp256k1_keccak256_dyn_out_point, mut keccak256_deps) = DynLock::deploy(&mut context);
+    let secp256k1_keccak256_bin = binary::get(Binary::Secp256k1Keccak256SighashAll);
+    let secp256k1_keccak256_out_point =
+        context.deploy_cell(secp256k1_keccak256_bin.to_vec().into());
+    let secp256k1_keccak256_dep = CellDep::new_builder()
+        .out_point(secp256k1_keccak256_out_point.clone())
+        .build();
+    keccak256_deps.push(secp256k1_keccak256_dep);
+
+    let keccak256_lock_script = context
+        .build_script(&secp256k1_keccak256_out_point, eth_pubkey)
+        .expect("build secp256k1 keccak256 lock script");
+
+    let order_input = {
+        let cell = OrderCell::builder()
+            .capacity_dec(1000, 8)
+            .sudt_amount(0)
+            .order_amount_dec(50, 8)
+            .price(5, 0)
+            .order_type(OrderType::SellCKB)
+            .build();
+
+        let witness = WitnessArgs::new_builder()
+            .input_type(Some(keccak256_lock_script.as_bytes()).pack())
+            .build();
+
+        OrderInput::Order {
+            cell_deps: Some(keccak256_deps),
+            cell,
+            custom_lock_args: Some(keccak256_lock_script.calc_script_hash().as_bytes()),
+            witness: Some(witness.as_bytes()),
+        }
+    };
+
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+    let tx = build_tx(&mut context, vec![order_input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let tx = test_tool::secp256k1_keccak256::sign_tx(tx, &privkey);
+    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+    assert_error_eq!(err, tx_error(ERR_DYNAMIC_LOADING_MEMORY_NOT_ENOUGH, 0));
 }
