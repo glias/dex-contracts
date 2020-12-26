@@ -148,6 +148,7 @@ fn find_cell_dep(hash: [u8; 32], hash_type: HashType) -> Result<Option<DataHash>
         match syscalls::load_cell_by_field(&mut buf, 0, i, Source::CellDep, cell_field) {
             Ok(_) => (),
             Err(SysError::IndexOutOfBound) => break,
+            Err(SysError::ItemMissing) => continue,
             Err(err) => return Err(err.into()),
         };
 

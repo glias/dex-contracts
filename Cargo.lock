@@ -315,7 +315,7 @@ dependencies = [
  "ckb-crypto",
  "ckb-dao-utils",
  "ckb-error",
- "ckb-hash",
+ "ckb-hash 0.37.0",
  "ckb-jsonrpc-types",
  "ckb-pow",
  "ckb-rational",
@@ -473,6 +473,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ckb-hash"
+version = "0.38.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d834451751a0d822762816ac15945fefd2b54baec47d463fbd8c4dc2850517b"
+dependencies = [
+ "blake2b-rs 0.1.5",
+]
+
+[[package]]
 name = "ckb-jsonrpc-types"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -569,7 +578,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3a56ba754ed40e90abff0aaf77ac922f787ba5c5485b12137264ab5148f853f"
 dependencies = [
  "byteorder",
- "ckb-hash",
+ "ckb-hash 0.37.0",
  "ckb-types",
  "eaglesong",
  "log",
@@ -635,7 +644,7 @@ dependencies = [
  "byteorder",
  "ckb-chain-spec",
  "ckb-error",
- "ckb-hash",
+ "ckb-hash 0.37.0",
  "ckb-logger",
  "ckb-traits",
  "ckb-types",
@@ -719,7 +728,7 @@ dependencies = [
  "ckb-chain-spec",
  "ckb-crypto",
  "ckb-error",
- "ckb-hash",
+ "ckb-hash 0.37.0",
  "ckb-jsonrpc-types",
  "ckb-resource",
  "ckb-script",
@@ -753,7 +762,7 @@ dependencies = [
  "ckb-channel",
  "ckb-error",
  "ckb-fixed-hash",
- "ckb-hash",
+ "ckb-hash 0.37.0",
  "ckb-occupied-capacity",
  "ckb-rational",
  "failure",
@@ -3216,6 +3225,7 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "ckb-dyn-lock",
+ "ckb-hash 0.38.0",
  "ckb-system-scripts",
  "ckb-testtool",
  "ckb-tool",

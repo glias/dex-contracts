@@ -1,5 +1,6 @@
 use super::*;
 use ckb_dyn_lock::test_tool;
+use ckb_tool::ckb_types::core::ScriptHashType;
 
 const ERR_CANCEL_ORDER_WITHOUT_WITNESS: i8 = 25;
 const ERR_USER_LOCK_NOT_FOUND: i8 = 26;
@@ -59,6 +60,86 @@ fn test_directly_cancel_order_using_signature_witness() {
 }
 
 #[test]
+fn test_directly_cancel_order_using_witness_by_type_hash() {
+    // generate key pair
+    let privkey = Generator::random_privkey();
+    let pubkey = privkey.pubkey().expect("pubkey");
+    let eth_pubkey = DynLock::eth_pubkey(pubkey);
+
+    let mut context = Context::default();
+    let mut cell_deps = vec![];
+
+    // Deploy dependencies
+    let secp256k1_data_bin = binary::get(Binary::Secp256k1Data);
+    let secp256k1_data_out_point = context.deploy_cell(secp256k1_data_bin.to_vec().into());
+    let secp256k1_data_dep = CellDep::new_builder()
+        .out_point(secp256k1_data_out_point)
+        .build();
+    cell_deps.push(secp256k1_data_dep);
+
+    let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
+    let always_success_dep = CellDep::new_builder()
+        .out_point(always_success_out_point.clone())
+        .build();
+    let always_success_lock_script = context
+        .build_script(&always_success_out_point, Default::default())
+        .expect("always success lock script");
+    cell_deps.push(always_success_dep);
+
+    // Use always success script as type script
+    let secp256k1_keccak256_bin = binary::get(Binary::Secp256k1Keccak256SighashAllDual);
+    let cell_output = CellOutput::new_builder()
+        .capacity(100_00_000_000.pack())
+        .type_(Some(always_success_lock_script.clone()).pack())
+        .build();
+    let secp256k1_keccak256_out_point =
+        context.create_cell(cell_output, secp256k1_keccak256_bin.to_vec().into());
+    let secp256k1_keccak256_dep = CellDep::new_builder()
+        .out_point(secp256k1_keccak256_out_point.clone())
+        .build();
+    cell_deps.push(secp256k1_keccak256_dep);
+
+    // Reference lock script through type hash
+    let keccak256_lock_script_type_hash =
+        ckb_hash::blake2b_256(always_success_lock_script.as_slice()).pack();
+    let keccak256_lock_script = Script::new_builder()
+        .code_hash(keccak256_lock_script_type_hash)
+        .hash_type(ScriptHashType::Type.into())
+        .args(eth_pubkey.pack())
+        .build();
+
+    let order_input = {
+        let cell = OrderCell::builder()
+            .capacity_dec(1000, 8)
+            .sudt_amount(0)
+            .order_amount_dec(50, 8)
+            .price(5, 0)
+            .order_type(OrderType::SellCKB)
+            .build();
+
+        let witness = WitnessArgs::new_builder()
+            .input_type(Some(keccak256_lock_script.as_bytes()).pack())
+            .build();
+
+        OrderInput::Order {
+            cell_deps: Some(cell_deps),
+            cell,
+            custom_lock_args: Some(keccak256_lock_script.calc_script_hash().as_bytes()),
+            witness: Some(witness.as_bytes()),
+        }
+    };
+
+    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1020, 8, 0, 0));
+    let tx = build_tx(&mut context, vec![order_input], vec![output]);
+    let tx = context.complete_tx(tx);
+
+    let tx = test_tool::secp256k1_keccak256::sign_tx(tx, &privkey);
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("pass verification");
+}
+
+#[test]
 fn test_directly_cancel_order_using_witness_redirect_to_forked_dyn_lock() {
     // generate key pair
     let privkey = Generator::random_privkey();
@@ -69,6 +150,10 @@ fn test_directly_cancel_order_using_witness_redirect_to_forked_dyn_lock() {
 
     // Deploy dependencies
     let (_secp256k1_keccak256_dyn_out_point, keccak256_deps) = DynLock::deploy(&mut context);
+
+    // If Secp256k1Keccak256SighashAll cell dep isn't found, contract will try
+    // to load hard code Binary::Secp256k1Keccak56SighashAllDual to verify
+    // witness.
     let secp256k1_keccak256_bin = binary::get(Binary::Secp256k1Keccak256SighashAll);
     let secp256k1_keccak256_out_point =
         context.deploy_cell(secp256k1_keccak256_bin.to_vec().into());
