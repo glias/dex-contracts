@@ -33,7 +33,7 @@ pub enum Error {
     PriceMismatch,
     OrderStillMatchable = 24,
 
-    // Directly cancellation
+    // Cancellation
     CancelOrderWithoutWitness = 25,
     UserLockNotFound,
     UserLockScriptEncoding,

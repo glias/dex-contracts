@@ -1,4 +1,5 @@
 use super::*;
+use ckb_dyn_lock::locks::binary::{self, Binary};
 use ckb_system_scripts::BUNDLED_CELL;
 use ckb_testtool::{builtin::ALWAYS_SUCCESS, context::Context};
 use ckb_tool::ckb_crypto::secp::{Generator, Privkey, Pubkey};
@@ -515,27 +516,51 @@ impl Secp256k1Lock {
             .set_witnesses(signed_witnesses)
             .build()
     }
+
+    fn blake160(data: &[u8]) -> [u8; 20] {
+        let mut buf = [0u8; 20];
+        let hash = blake2b_256(data);
+        buf.clone_from_slice(&hash[..20]);
+        buf
+    }
 }
 
-fn blake160(data: &[u8]) -> [u8; 20] {
-    let mut buf = [0u8; 20];
-    let hash = blake2b_256(data);
-    buf.clone_from_slice(&hash[..20]);
-    buf
-}
+struct DynLock;
 
-fn eth_pubkey(pubkey: Pubkey) -> Bytes {
-    use sha3::{Digest, Keccak256};
+impl DynLock {
+    fn deploy(context: &mut Context) -> (OutPoint, Vec<CellDep>) {
+        let secp256k1_data_bin = binary::get(Binary::Secp256k1Data);
+        let secp256k1_data_out_point = context.deploy_cell(secp256k1_data_bin.to_vec().into());
+        let secp256k1_data_dep = CellDep::new_builder()
+            .out_point(secp256k1_data_out_point)
+            .build();
 
-    let prefix_key: [u8; 65] = {
-        let mut temp = [4u8; 65];
-        temp[1..65].copy_from_slice(pubkey.as_bytes());
-        temp
-    };
-    let pubkey = secp256k1::key::PublicKey::from_slice(&prefix_key).unwrap();
-    let message = Vec::from(&pubkey.serialize_uncompressed()[1..]);
+        let secp256k1_keccak256_bin = binary::get(Binary::Secp256k1Keccak256SighashAllDual);
+        let secp256k1_keccak256_out_point =
+            context.deploy_cell(secp256k1_keccak256_bin.to_vec().into());
+        let secp256k1_keccak256_dep = CellDep::new_builder()
+            .out_point(secp256k1_keccak256_out_point.clone())
+            .build();
 
-    let mut hasher = Keccak256::default();
-    hasher.input(&message);
-    Bytes::copy_from_slice(&hasher.result()[12..32])
+        (secp256k1_keccak256_out_point, vec![
+            secp256k1_data_dep,
+            secp256k1_keccak256_dep,
+        ])
+    }
+
+    fn eth_pubkey(pubkey: Pubkey) -> Bytes {
+        use sha3::{Digest, Keccak256};
+
+        let prefix_key: [u8; 65] = {
+            let mut temp = [4u8; 65];
+            temp[1..65].copy_from_slice(pubkey.as_bytes());
+            temp
+        };
+        let pubkey = secp256k1::key::PublicKey::from_slice(&prefix_key).unwrap();
+        let message = Vec::from(&pubkey.serialize_uncompressed()[1..]);
+
+        let mut hasher = Keccak256::default();
+        hasher.input(&message);
+        Bytes::copy_from_slice(&hasher.result()[12..32])
+    }
 }
