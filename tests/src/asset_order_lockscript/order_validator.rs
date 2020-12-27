@@ -43,6 +43,21 @@ fn test_sell_ckb_complete_to_free_cell_since_we_cant_sell_even_one_ckb() {
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("pass verification");
+
+    // dump raw test tx files
+    let setup = RunningSetup {
+        is_lock_script:  true,
+        is_output:       false,
+        script_index:    0,
+        native_binaries: HashMap::default(),
+    };
+    write_native_setup(
+        "sell_ckb_complete_to_free_cell_since_we_cant_sell_even_one_ckb",
+        "asset-order-lockscript-sim",
+        &tx,
+        &context,
+        &setup,
+    );
 }
 
 #[test]
@@ -67,6 +82,21 @@ fn test_complete_sell_ckb_order_since_we_cant_sell_more_price_exponent_is_negati
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("pass verification");
+
+    // dump raw test tx files
+    let setup = RunningSetup {
+        is_lock_script:  true,
+        is_output:       false,
+        script_index:    0,
+        native_binaries: HashMap::default(),
+    };
+    write_native_setup(
+        "complete_sell_ckb_order_since_we_cant_sell_more_price_exponent_is_negative",
+        "asset-order-lockscript-sim",
+        &tx,
+        &context,
+        &setup,
+    );
 }
 
 #[test]

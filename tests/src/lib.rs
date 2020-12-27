@@ -1,8 +1,9 @@
-use ckb_tool::ckb_types::bytes::Bytes;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
+
+use ckb_tool::ckb_types::bytes::Bytes;
 
 #[cfg(test)]
 mod asset_order_lockscript;
@@ -12,6 +13,18 @@ mod generated;
 
 #[cfg(test)]
 mod liquidity_poll_tests;
+
+lazy_static::lazy_static! {
+    static ref LOADER: Loader = Loader::default();
+    static ref TX_FOLDER: PathBuf = {
+        let path = LOADER.path("dumped_tests");
+        if Path::new(&path).exists() {
+            fs::remove_dir_all(&path).expect("remove old dir");
+        }
+        fs::create_dir_all(&path).expect("create test dir");
+        path
+    };
+}
 
 const TEST_ENV_VAR: &str = "CAPSULE_TEST_ENV";
 
@@ -57,6 +70,12 @@ impl Loader {
         base_path.push("build");
         base_path.push(load_prefix);
         Loader(base_path)
+    }
+
+    pub fn path(&self, name: &str) -> PathBuf {
+        let mut path = self.0.clone();
+        path.push(name);
+        path
     }
 
     pub fn load_binary(&self, name: &str) -> Bytes {

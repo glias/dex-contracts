@@ -6,13 +6,16 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ckb-hash = "0.38"
 ckb-tool = "0.2"
 ckb-testtool = "0.2"
 ckb-system-scripts = "0.5"
-ckb-hash = "0.38"
+ckb-standalone-debugger = "0.3"
+ckb-x64-simulator = "0.4"
 hex = "0.4"
 molecule = "0.6"
 lazy_static = "1.4"
-ckb-dyn-lock = { version = "0.1.7", features = ["lock_binary", "test_tool"] }
+ckb-dyn-lock = { path = "deps/ckb-dyn-lock", features = ["lock_binary", "test_tool"] }
 secp256k1 = "0.19"
 sha3 = "0.8"
+serde_json = "1.0"

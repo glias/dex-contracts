@@ -6,8 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ckb-std = "0.7"
-ckb-dyn-lock = "0.1.7"
+ckb-std = { git = "https://github.com/nervosnetwork/ckb-std", rev = "29455b8" }
+ckb-dyn-lock = { path = "../../deps/ckb-dyn-lock" }
 share = { path = "../../share" }
 num-bigint = { version = "0.3", default-features = false }
 num-traits = { version = "0.2", default-features = false }

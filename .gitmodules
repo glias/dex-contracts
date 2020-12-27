@@ -1,0 +1,3 @@
+[submodule "deps/ckb-dyn-lock"]
+	path = deps/ckb-dyn-lock
+	url = https://github.com/zkzkp/ckb-dyn-lock
