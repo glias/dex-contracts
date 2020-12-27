@@ -3,7 +3,8 @@ members = [
     "tests",
     "contracts/asset-order-lockscript",
     "contracts/liquidity-poll-contract",
-    "share"
+    "share",
+    "natives"
 ]
 
 [profile.release]
