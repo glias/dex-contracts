@@ -26,12 +26,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(181, 8)           // 181 ckb
-        .sudt_amount_dec(0, 0)          // 0 sudt
-        .order_amount(1)                // 1 smallest decimal sudt
-        .price(28, 8)                   // 28_00_000_000
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity_dec(181, 8)           // 181 ckb
+                .sudt_amount_dec(0, 0)          // 0 sudt
+                .order_amount(1)                // 1 smallest decimal sudt
+                .price(28, 8)                   // 28_00_000_000
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         // Since price is bigger than 27 ckb, 181 ckb(order size) - 154 ckb(sudt size)
@@ -54,12 +54,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity(554_00_000_004)       // 554_00_000_004
-        .sudt_amount_dec(0, 0)          // 0 sudt
-        .order_amount_dec(80, 8)        // 80 sudt
-        .price(50, -1)                  // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity(554_00_000_004)       // 554_00_000_004
+                .sudt_amount_dec(0, 0)          // 0 sudt
+                .order_amount_dec(80, 8)        // 80 sudt
+                .price(50, -1)                  // 5
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt, require at least 1.2 ckb, but
@@ -82,12 +82,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity(554_00_000_004)       // 554_00_000_004
-        .sudt_amount_dec(0, 0)          // 0 sudt
-        .order_amount_dec(80, 8)        // 80 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity(554_00_000_004)       // 554_00_000_004
+                .sudt_amount_dec(0, 0)          // 0 sudt
+                .order_amount_dec(80, 8)        // 80 sudt
+                .price(5, 0)                    // 5
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt, require at least 1.2 ckb,
@@ -108,12 +108,12 @@ test_contract!(
 test_contract!(test_complete_buy_ckb_order_since_we_cant_buy_more, {
     let input = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(154, 8)           // 154 ckb
-        .sudt_amount_dec(100, 8)        // 100 sudt
-        .order_amount_dec(50, 8)        // 50 ckb
-        .price(5, -1)                   // 0.5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+            .capacity_dec(154, 8)           // 154 ckb
+            .sudt_amount_dec(100, 8)        // 100 sudt
+            .order_amount_dec(50, 8)        // 50 ckb
+            .price(5, -1)                   // 0.5
+            .order_type(OrderType::BuyCKB)
+            .build(),
     );
 
     // Sold 100 sudt, got 49.85 ckb, remain 0.15 ckb, require at least 0.3 sudt,
@@ -177,22 +177,22 @@ test_contract!(
     {
         let input0 = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(2000, 8)          // 2000 ckb
-        .sudt_amount_dec(50, 8)         // 50 sudt
-        .order_amount_dec(150, 8)       // 150 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity_dec(2000, 8)          // 2000 ckb
+                .sudt_amount_dec(50, 8)         // 50 sudt
+                .order_amount_dec(150, 8)       // 150 sudt
+                .price(5, 0)                    // 5
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         let input1 = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(800, 8)           // 800 ckb
-        .sudt_amount_dec(500, 8)        // 500 sudt
-        .order_amount_dec(1000, 8)      // 1000 ckb
-        .price(5, 0)                    // 5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+                .capacity_dec(800, 8)           // 800 ckb
+                .sudt_amount_dec(500, 8)        // 500 sudt
+                .order_amount_dec(1000, 8)      // 1000 ckb
+                .price(5, 0)                    // 5
+                .order_type(OrderType::BuyCKB)
+                .build(),
         );
 
         // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
@@ -222,22 +222,22 @@ test_contract!(
 test_contract!(test_ckb_sudt_completed_matched_order_pair, {
     let input0 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(2000, 8)          // 2000 ckb
-        .sudt_amount_dec(50, 8)         // 50 sudt
-        .order_amount_dec(150, 8)       // 150 sudt
-        .price(52, -1)                  // 5.2
-        .order_type(OrderType::SellCKB)
-        .build(),
+            .capacity_dec(2000, 8)          // 2000 ckb
+            .sudt_amount_dec(50, 8)         // 50 sudt
+            .order_amount_dec(150, 8)       // 150 sudt
+            .price(52, -1)                  // 5.2
+            .order_type(OrderType::SellCKB)
+            .build(),
     );
 
     let input1 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(800, 8)           // 800 ckb
-        .sudt_amount_dec(500, 8)        // 500 sudt
-        .order_amount_dec(750, 8)       // 750 ckb
-        .price(5, 0)                    // 5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+            .capacity_dec(800, 8)           // 800 ckb
+            .sudt_amount_dec(500, 8)        // 500 sudt
+            .order_amount_dec(750, 8)       // 750 ckb
+            .price(5, 0)                    // 5
+            .order_type(OrderType::BuyCKB)
+            .build(),
     );
 
     let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
@@ -257,42 +257,42 @@ test_contract!(test_ckb_sudt_completed_matched_order_pair, {
 test_contract!(ckb_sudt_two_completed_matched_order_pairs, {
     let input0 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(2000, 8)          // 2000 ckb
-        .sudt_amount(0)                 // 0 sudt
-        .order_amount_dec(150, 8)       // 150 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+            .capacity_dec(2000, 8)          // 2000 ckb
+            .sudt_amount(0)                 // 0 sudt
+            .order_amount_dec(150, 8)       // 150 sudt
+            .price(5, 0)                    // 5
+            .order_type(OrderType::SellCKB)
+            .build(),
     );
 
     let input1 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(800, 8)           // 800 ckb
-        .sudt_amount_dec(500, 8)        // 500 sudt
-        .order_amount_dec(750, 8)       // 750 ckb
-        .price(5, 0)                    // 5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+            .capacity_dec(800, 8)           // 800 ckb
+            .sudt_amount_dec(500, 8)        // 500 sudt
+            .order_amount_dec(750, 8)       // 750 ckb
+            .price(5, 0)                    // 5
+            .order_type(OrderType::BuyCKB)
+            .build(),
     );
 
     let input2 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(400, 8)           // 400 ckb
-        .sudt_amount(0)                 // 0 sudt
-        .order_amount_dec(50, 8)        // 50 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+            .capacity_dec(400, 8)           // 400 ckb
+            .sudt_amount(0)                 // 0 sudt
+            .order_amount_dec(50, 8)        // 50 sudt
+            .price(5, 0)                    // 5
+            .order_type(OrderType::SellCKB)
+            .build(),
     );
 
     let input3 = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(400, 8)           // 400 ckb
-        .sudt_amount_dec(100, 8)        // 100 sudt
-        .order_amount_dec(200, 8)       // 200 ckb
-        .price(5, 0)                    // 5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+            .capacity_dec(400, 8)           // 400 ckb
+            .sudt_amount_dec(100, 8)        // 100 sudt
+            .order_amount_dec(200, 8)       // 200 ckb
+            .price(5, 0)                    // 5
+            .order_type(OrderType::BuyCKB)
+            .build(),
     );
 
     let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 150, 8));
@@ -363,12 +363,12 @@ test_contract!(test_err_wrong_order_data_size, {
 test_contract!(test_err_order_price_is_zero, {
     let input = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(2000, 8)
-        .sudt_amount_dec(50, 8)
-        .order_amount_dec(150, 8)
-        .price(0, 0)                    // Error: order price is zero
-        .order_type(OrderType::SellCKB)
-        .build(),
+            .capacity_dec(2000, 8)
+            .sudt_amount_dec(50, 8)
+            .order_amount_dec(150, 8)
+            .price(0, 0)                    // Error: order price is zero
+            .order_type(OrderType::SellCKB)
+            .build(),
     );
 
     let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
@@ -385,12 +385,12 @@ test_contract!(test_err_order_price_is_zero, {
 test_contract!(test_err_unknown_order_type, {
     let input = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(2000, 8)
-        .sudt_amount_dec(50, 8)
-        .order_amount_dec(150, 8)
-        .price(5, 0)
-        .order_type_unchecked(111)      // Error: unknown order type
-        .build(),
+            .capacity_dec(2000, 8)
+            .sudt_amount_dec(50, 8)
+            .order_amount_dec(150, 8)
+            .price(5, 0)
+            .order_type_unchecked(111)      // Error: unknown order type
+            .build(),
     );
 
     let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
@@ -407,13 +407,13 @@ test_contract!(test_err_unknown_order_type, {
 test_contract!(test_err_unexpected_version, {
     let input = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(2000, 8)
-        .sudt_amount_dec(50, 8)
-        .order_amount_dec(150, 8)
-        .price(5, 0)
-        .order_type(OrderType::SellCKB)
-        .version(100)                   // Error: unexpected version
-        .build(),
+            .capacity_dec(2000, 8)
+            .sudt_amount_dec(50, 8)
+            .order_amount_dec(150, 8)
+            .price(5, 0)
+            .order_type(OrderType::SellCKB)
+            .version(100)                   // Error: unexpected version
+            .build(),
     );
 
     let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
@@ -733,12 +733,12 @@ test_contract!(
 test_contract!(test_err_buy_ckb_order_sudt_amount_is_zero, {
     let input = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(2000, 8)
-        .sudt_amount_dec(0, 0)          // Error: 0 sudt amount
-        .order_amount_dec(150, 8)
-        .price(5, 0)
-        .order_type(OrderType::BuyCKB)
-        .build(),
+            .capacity_dec(2000, 8)
+            .sudt_amount_dec(0, 0)          // Error: 0 sudt amount
+            .order_amount_dec(150, 8)
+            .price(5, 0)
+            .order_type(OrderType::BuyCKB)
+            .build(),
     );
 
     let output = OrderOutput::new_sudt(SudtCell::new_with_dec(2000, 8, 150, 8));
@@ -882,12 +882,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(2000, 8)          // 2000 ckb
-        .sudt_amount_dec(0, 0)          // 0 sudt
-        .order_amount_dec(250, 8)       // 250 sudt
-        .price(5, -1)                   // 0.5
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity_dec(2000, 8)          // 2000 ckb
+                .sudt_amount_dec(0, 0)          // 0 sudt
+                .order_amount_dec(250, 8)       // 250 sudt
+                .price(5, -1)                   // 0.5
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         // Error: paid 1000 ckb, bought 200 sudt
@@ -908,12 +908,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(2000, 8)          // 2000 ckb
-        .sudt_amount_dec(0, 0)          // 0 sudt
-        .order_amount_dec(250, 8)       // 250 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity_dec(2000, 8)          // 2000 ckb
+                .sudt_amount_dec(0, 0)          // 0 sudt
+                .order_amount_dec(250, 8)       // 250 sudt
+                .price(5, 0)                    // 5
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         // Error: paid 1000 ckb, bought 100 sudt
@@ -934,12 +934,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(200, 8)           // 200 ckb
-        .sudt_amount_dec(2000, 8)       // 2000 sudt
-        .order_amount_dec(500, 8)       // 500 ckb
-        .price(5, -1)                   // 5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+                .capacity_dec(200, 8)           // 200 ckb
+                .sudt_amount_dec(2000, 8)       // 2000 sudt
+                .order_amount_dec(500, 8)       // 500 ckb
+                .price(5, -1)                   // 5
+                .order_type(OrderType::BuyCKB)
+                .build(),
         );
 
         // Error: paid 1000 sudt, bought 300 ckb
@@ -960,12 +960,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(200, 8)           // 200 ckb
-        .sudt_amount_dec(2000, 8)       // 2000 sudt
-        .order_amount_dec(500, 8)       // 500 ckb
-        .price(5, 0)                    // 5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+                .capacity_dec(200, 8)           // 200 ckb
+                .sudt_amount_dec(2000, 8)       // 2000 sudt
+                .order_amount_dec(500, 8)       // 500 ckb
+                .price(5, 0)                    // 5
+                .order_type(OrderType::BuyCKB)
+                .build(),
         );
 
         // Error: paid 1000 sudt, bought 300 ckb
@@ -986,12 +986,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(555, 8)           // 555 ckb
-        .sudt_amount_dec(0, 0)          // 0 sudt
-        .order_amount_dec(80, 8)        // 80 sudt
-        .price(50, -1)                  // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity_dec(555, 8)           // 555 ckb
+                .sudt_amount_dec(0, 0)          // 0 sudt
+                .order_amount_dec(80, 8)        // 80 sudt
+                .price(50, -1)                  // 5
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
@@ -1013,12 +1013,12 @@ test_contract!(
     {
         let input = OrderInput::new_order(
             OrderCell::builder()
-        .capacity_dec(555, 8)           // 555 ckb
-        .sudt_amount_dec(0, 0)          // 0 sudt
-        .order_amount_dec(80, 8)        // 80 sudt
-        .price(5, 0)                    // 5
-        .order_type(OrderType::SellCKB)
-        .build(),
+                .capacity_dec(555, 8)           // 555 ckb
+                .sudt_amount_dec(0, 0)          // 0 sudt
+                .order_amount_dec(80, 8)        // 80 sudt
+                .price(5, 0)                    // 5
+                .order_type(OrderType::SellCKB)
+                .build(),
         );
 
         // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
@@ -1038,12 +1038,12 @@ test_contract!(
 test_contract!(test_err_buy_ckb_order_still_matchable, {
     let input = OrderInput::new_order(
         OrderCell::builder()
-        .capacity_dec(200, 8)           // 200 ckb
-        .sudt_amount_dec(200, 8)        // 200 sudt
-        .order_amount_dec(100, 8)       // 100 ckb
-        .price(5, -1)                   // 0.5
-        .order_type(OrderType::BuyCKB)
-        .build(),
+            .capacity_dec(200, 8)           // 200 ckb
+            .sudt_amount_dec(200, 8)        // 200 sudt
+            .order_amount_dec(100, 8)       // 100 ckb
+            .price(5, -1)                   // 0.5
+            .order_type(OrderType::BuyCKB)
+            .build(),
     );
 
     // Error: paid 100 sudt, bought 49.85 ckb, we can paid 100 sudt to bought 49.85 ckb
