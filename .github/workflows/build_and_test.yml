@@ -22,7 +22,7 @@ jobs:
       - name: Init submodules
         uses: srt32/git-actions@v0.0.3
         with:
-          args: git submodule init && git submodule update -r --init && cd ckb-miscellaneous-scripts && git submodule init && git submodule update
+          args: git submodule update -r --init
 
       - name: Install Capsule
         run: |
