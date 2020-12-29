@@ -1,5 +1,5 @@
 SCHEMA_PATH := schemas
-SCHEMA_DEST_PATH := src/generated
+SCHEMA_DEST_PATH := src/schema/generated
 
 schema:
 	moleculec --language rust --schema-file ${SCHEMA_PATH}/basic.mol > ${SCHEMA_DEST_PATH}/basic.rs

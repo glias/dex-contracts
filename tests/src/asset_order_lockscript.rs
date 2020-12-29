@@ -16,8 +16,8 @@ use ckb_tool::ckb_types::core::{Capacity, DepType, TransactionBuilder, Transacti
 use ckb_tool::ckb_types::packed::{self, *};
 use ckb_tool::ckb_types::{bytes::Bytes, prelude::*, H256};
 use ckb_x64_simulator::RunningSetup;
-use generated::cell_data::AssetOrder;
 use molecule::prelude::*;
+use schema::cell_data::AssetOrder;
 use serde_json::to_string_pretty;
 
 const MAX_CYCLES: u64 = 10000_0000;

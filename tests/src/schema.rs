@@ -1,5 +1,7 @@
-pub mod basic;
-pub mod cell_data;
+#[allow(dead_code)]
+pub mod generated;
+pub use generated::basic;
+pub use generated::cell_data;
 
 use ckb_tool::ckb_types::{bytes::Bytes, prelude::*};
 

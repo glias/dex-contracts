@@ -7,12 +7,9 @@ use ckb_tool::ckb_types::bytes::Bytes;
 
 #[cfg(test)]
 mod asset_order_lockscript;
-
-#[allow(dead_code)]
-mod generated;
-
 #[cfg(test)]
 mod liquidity_poll_tests;
+mod schema;
 
 lazy_static::lazy_static! {
     static ref LOADER: Loader = Loader::default();
