@@ -4,7 +4,7 @@
 # workspace_dir = "."
 
 # capsule version
-version = "0.4.4 fae2bb1"
+version = "0.4.3 13d6f1d"
 # path of deployment config file
 deployment = "deployment.toml"
 
