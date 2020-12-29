@@ -7,13 +7,19 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ckb-dyn-lock = { path = "deps/ckb-dyn-lock", features = ["lock_binary", "test_tool"] }
-ckb-std = { git = "https://github.com/nervosnetwork/ckb-std", rev = "29455b8", features = ["ckb-types", "simulator"] }
 ckb-tool = "0.2.1"
+ckb-dyn-lock = { version = "0.1", default-features = false }
+ckb-std = { git = "https://github.com/nervosnetwork/ckb-std", rev = "29455b8", features = ["ckb-types", "simulator"] }
+dynamic-loading = { path = "../dynamic-loading" }
 share = { path = "../share" }
 num-bigint = { version = "0.3", default-features = false }
 num-traits = { version = "0.2", default-features = false }
 
+[features]
+default = ["simulator"]
+simulator = []
+
 [[bin]]
 name = "asset-order-lockscript-sim"
 path = "src/asset_order_lockscript.rs"
+required-features = ["simulator"]

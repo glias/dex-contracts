@@ -1,5 +1,3 @@
-extern crate alloc;
-
 #[path = "../../contracts/asset-order-lockscript/src/entry.rs"]
 mod entry;
 #[path = "../../contracts/asset-order-lockscript/src/error.rs"]

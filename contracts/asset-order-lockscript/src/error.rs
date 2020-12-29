@@ -76,9 +76,9 @@ impl From<ckb_std::dynamic_loading::Error> for Error {
     }
 }
 
-impl From<ckb_dyn_lock::Error> for Error {
-    fn from(err: ckb_dyn_lock::Error) -> Self {
-        use ckb_dyn_lock::Error as LError;
+impl From<dynamic_loading::Error> for Error {
+    fn from(err: dynamic_loading::Error) -> Self {
+        use dynamic_loading::Error as LError;
 
         match err {
             LError::DynamicLoading(e) => e.into(),

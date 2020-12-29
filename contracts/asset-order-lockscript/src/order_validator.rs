@@ -1,4 +1,8 @@
+#[cfg(not(feature = "simulator"))]
 use alloc::vec::Vec;
+#[cfg(feature = "simulator")]
+use std::vec::Vec;
+
 use core::convert::TryFrom;
 use core::ops::Deref;
 use core::result::Result;

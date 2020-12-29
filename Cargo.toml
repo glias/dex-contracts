@@ -4,7 +4,8 @@ members = [
     "contracts/asset-order-lockscript",
     "contracts/liquidity-poll-contract",
     "share",
-    "natives"
+    "natives",
+    "dynamic-loading"
 ]
 
 [profile.release]

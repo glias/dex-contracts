@@ -33,20 +33,17 @@ use core::result::Result;
 use ckb_dyn_lock::locks::{
     CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL, CODE_HASH_SECP256K1_KECCAK256_SIGHASH_ALL_DUAL,
 };
-use ckb_dyn_lock::DynLock;
 use ckb_std::ckb_constants::{CellField, Source};
 use ckb_std::ckb_types::packed::{Byte, Script, ScriptReader, WitnessArgs};
 use ckb_std::ckb_types::{bytes::Bytes, prelude::*};
 use ckb_std::dynamic_loading::CKBDLContext;
 use ckb_std::error::SysError;
 use ckb_std::high_level::{load_cell_lock_hash, load_script, load_witness_args, QueryIter};
-use ckb_std::{default_alloc, syscalls};
+use ckb_std::syscalls;
+use dynamic_loading::DynLock;
 use share::hash::blake2b_256;
 
 use crate::error::Error;
-
-// Alloc 4K fast HEAP + 2M HEAP to receives PrefilledData
-default_alloc!(4 * 1024, 2048 * 1024, 64);
 
 pub fn main() -> Result<(), Error> {
     let script = load_script()?;

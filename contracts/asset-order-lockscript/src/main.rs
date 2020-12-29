@@ -16,6 +16,9 @@ mod order_validator;
 
 ckb_std::entry!(program_entry);
 
+// Alloc 4K fast HEAP + 2M HEAP to receives PrefilledData
+ckb_std::default_alloc!(4 * 1024, 2048 * 1024, 64);
+
 /// program entry
 fn program_entry() -> i8 {
     // Call main function and return error code
