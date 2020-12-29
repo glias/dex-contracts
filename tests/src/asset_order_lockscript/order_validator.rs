@@ -148,6 +148,47 @@ fn test_complete_buy_ckb_order_since_we_cant_buy_more() {
 }
 
 #[test]
+fn test_ckb_sudt_matched_order_case_0_from_deal_matcher() {
+    let input0 = OrderInput::new_order(
+        OrderCell::builder()
+            .capacity_dec(1177003, 5)
+            .sudt_amount_dec(0, 0)
+            .order_amount(3018190909)
+            .price(33, 0)
+            .order_type(OrderType::SellCKB)
+            .build(),
+    );
+
+    let input1 = OrderInput::new_order(
+        OrderCell::builder()
+            .capacity_dec(181, 8)
+            .sudt_amount_dec(332001, 5)
+            .order_amount_dec(996003, 5)
+            .price(3, 0)
+            .order_type(OrderType::BuyCKB)
+            .build(),
+    );
+
+    let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(63209390911, 0, 3018190909, 0));
+    let output1 = OrderOutput::new_order(
+        OrderCell::builder()
+            .capacity(72427436362)
+            .sudt_amount(30172827273)
+            .order_amount(45272863638)
+            .price(3, 0)
+            .order_type(OrderType::BuyCKB)
+            .build(),
+    );
+
+    let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
+    let tx = context.complete_tx(tx);
+
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("pass verification");
+}
+
+#[test]
 fn test_ckb_sudt_two_orders_one_partial_filled_and_one_completed() {
     let input0 = OrderInput::new_order(
         OrderCell::builder()
