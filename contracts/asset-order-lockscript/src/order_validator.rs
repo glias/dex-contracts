@@ -4,7 +4,6 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 use core::convert::TryFrom;
-use core::ops::Deref;
 use core::result::Result;
 
 use ckb_std::ckb_types::{bytes::Bytes, packed::Script};
@@ -63,7 +62,7 @@ enum OrderState {
 
 fn validate_order_cells(index: usize) -> Result<(), Error> {
     let input = Cell::load(index, Source::Input)?;
-    let mut output = Cell::load(index, Source::Output)?;
+    let output = Cell::load(index, Source::Output)?;
 
     let input_order = input.to_order()?;
     if input_order.order_amount == 0 {
@@ -117,11 +116,9 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
                 }
 
                 // In this case, output should be a free cell
-                let checked_output = output.checked();
-                if checked_output.sudt_amount() == 0 {
+                if output.sudt_amount() == 0 {
                     return Err(Error::OutputSudtAmountIsZero);
                 }
-                output = checked_output.0;
             }
             None => {
                 if output.data.len() != 0 {
@@ -146,30 +143,27 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     }
 
     match input_order.type_ {
-        OrderType::SellCKB => validate_sell_ckb_price(
-            &input.checked(),
-            &output.checked(),
-            order_state == OrderState::SellCKBCompleted,
-        ),
-        OrderType::BuyCKB => validate_buy_ckb_price(
-            &input.checked(),
-            &output.checked(),
-            order_state == OrderState::BuyCKBCompleted,
-        ),
+        OrderType::SellCKB => {
+            validate_sell_ckb_price(&input, &output, order_state == OrderState::SellCKBCompleted)
+        }
+        OrderType::BuyCKB => {
+            validate_buy_ckb_price(&input, &output, order_state == OrderState::BuyCKBCompleted)
+        }
     }
 }
 
-fn validate_sell_ckb_price(
-    input: &CheckedCell,
-    output: &CheckedCell,
-    completed: bool,
-) -> Result<(), Error> {
+fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
     if output.capacity > input.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
 
     let input_sudt_amount = input.sudt_amount();
-    let output_sudt_amount = output.sudt_amount();
+    // May be a free cell
+    let output_sudt_amount = if output.data.len() < 16 {
+        0
+    } else {
+        output.sudt_amount()
+    };
     if output_sudt_amount < input_sudt_amount {
         return Err(Error::NegativeSudtDifference);
     }
@@ -220,11 +214,7 @@ fn validate_sell_ckb_price(
     Ok(())
 }
 
-fn validate_buy_ckb_price(
-    input: &CheckedCell,
-    output: &CheckedCell,
-    completed: bool,
-) -> Result<(), Error> {
+fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
     if input.capacity > output.capacity {
         return Err(Error::NegativeCapacityDifference);
     }
@@ -234,7 +224,11 @@ fn validate_buy_ckb_price(
         return Err(Error::BuyCKBOrderSudtAmountIsZero);
     }
 
-    let output_sudt_amount = output.sudt_amount();
+    let output_sudt_amount = if output.data.len() < 16 {
+        0
+    } else {
+        output.sudt_amount()
+    };
     if output_sudt_amount > input_sudt_amount {
         return Err(Error::NegativeSudtDifference);
     }
@@ -437,30 +431,11 @@ impl Cell {
         Order::try_from(self.data.as_slice())
     }
 
-    pub fn checked(self) -> CheckedCell {
-        CheckedCell(self)
-    }
-}
-
-#[derive(Debug)]
-struct CheckedCell(Cell);
-
-impl CheckedCell {
     pub fn sudt_amount(&self) -> u128 {
-        if self.data.len() < 16 {
-            return 0;
-        }
+        assert!(self.data.len() >= 16, "BUG: check data size");
 
         let mut buf = [0u8; 16];
         buf.copy_from_slice(&self.data.as_slice()[0..16]);
         u128::from_le_bytes(buf)
-    }
-}
-
-impl Deref for CheckedCell {
-    type Target = Cell;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
