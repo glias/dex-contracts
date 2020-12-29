@@ -13,6 +13,8 @@ const ERR_DYNAMIC_LOADING_MEMORY_NOT_ENOUGH: i8 = 34;
 // secp256k1_blake160_sighash_all lock error code
 const ERR_SECP256K1_WRONG_KEY: i8 = -31;
 
+// FIXME: simulator not support yet
+
 #[test]
 fn test_directly_cancel_order_using_signature_witness() {
     // generate key pair

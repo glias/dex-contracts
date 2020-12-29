@@ -22,6 +22,31 @@ use serde_json::to_string_pretty;
 
 const MAX_CYCLES: u64 = 10000_0000;
 
+// Simple macro to setup simulator for coverge
+macro_rules! test_contract {
+    ($case_name:ident, $body:expr) => {
+        #[test]
+        fn $case_name() {
+            let (context, tx) = $body;
+
+            let setup = RunningSetup {
+                is_lock_script:  true,
+                is_output:       false,
+                script_index:    0,
+                native_binaries: HashMap::default(),
+            };
+
+            write_native_setup(
+                stringify!($case_name),
+                "asset-order-lockscript-sim",
+                &tx,
+                &context,
+                &setup,
+            );
+        }
+    };
+}
+
 mod cancellation;
 mod order_validator;
 

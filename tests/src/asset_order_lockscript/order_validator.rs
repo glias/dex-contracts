@@ -21,110 +21,91 @@ const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 22;
 const ERR_PRICE_MISMATCH: i8 = 23;
 const ERR_ORDER_STILL_MATCHABLE: i8 = 24;
 
-#[test]
-fn test_sell_ckb_complete_to_free_cell_since_we_cant_sell_even_one_ckb() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+test_contract!(
+    test_sell_ckb_complete_to_free_cell_since_we_cant_sell_even_one_ckb,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(181, 8)           // 181 ckb
         .sudt_amount_dec(0, 0)          // 0 sudt
         .order_amount(1)                // 1 smallest decimal sudt
         .price(28, 8)                   // 28_00_000_000
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    // Since price is bigger than 27 ckb, 181 ckb(order size) - 154 ckb(sudt size)
-    // = 27 ckb.
-    let output = OrderOutput::new_free(FreeCell::new_with_dec(181, 8));
+        // Since price is bigger than 27 ckb, 181 ckb(order size) - 154 ckb(sudt size)
+        // = 27 ckb.
+        let output = OrderOutput::new_free(FreeCell::new_with_dec(181, 8));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("pass verification");
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("pass verification");
 
-    // dump raw test tx files
-    let setup = RunningSetup {
-        is_lock_script:  true,
-        is_output:       false,
-        script_index:    0,
-        native_binaries: HashMap::default(),
-    };
-    write_native_setup(
-        "sell_ckb_complete_to_free_cell_since_we_cant_sell_even_one_ckb",
-        "asset-order-lockscript-sim",
-        &tx,
-        &context,
-        &setup,
-    );
-}
+        (context, tx)
+    }
+);
 
-#[test]
-fn test_complete_sell_ckb_order_since_we_cant_sell_more_price_exponent_is_negative() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+test_contract!(
+    test_complete_sell_ckb_order_since_we_cant_sell_more_price_exponent_is_negative,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity(554_00_000_004)       // 554_00_000_004
         .sudt_amount_dec(0, 0)          // 0 sudt
         .order_amount_dec(80, 8)        // 80 sudt
         .price(50, -1)                  // 5
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt, require at least 1.2 ckb, but
-    // we only have 4 shannons can be sold.
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(154_00_000_004, 0, 79_76, 6));
+        // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt, require at least 1.2 ckb, but
+        // we only have 4 shannons can be sold.
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(154_00_000_004, 0, 79_76, 6));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("pass verification");
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("pass verification");
 
-    // dump raw test tx files
-    let setup = RunningSetup {
-        is_lock_script:  true,
-        is_output:       false,
-        script_index:    0,
-        native_binaries: HashMap::default(),
-    };
-    write_native_setup(
-        "complete_sell_ckb_order_since_we_cant_sell_more_price_exponent_is_negative",
-        "asset-order-lockscript-sim",
-        &tx,
-        &context,
-        &setup,
-    );
-}
+        (context, tx)
+    }
+);
 
-#[test]
-fn test_complete_sell_ckb_order_since_we_cant_sell_more_price_exponent_is_positive() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+test_contract!(
+    test_complete_sell_ckb_order_since_we_cant_sell_more_price_exponent_is_positive,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity(554_00_000_004)       // 554_00_000_004
         .sudt_amount_dec(0, 0)          // 0 sudt
         .order_amount_dec(80, 8)        // 80 sudt
         .price(5, 0)                    // 5
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt, require at least 1.2 ckb,
-    // but we only have 4 shannons can be sold.
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(154_00_000_004, 0, 79_76, 6));
+        // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt, require at least 1.2 ckb,
+        // but we only have 4 shannons can be sold.
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(154_00_000_004, 0, 79_76, 6));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("pass verification");
-}
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("pass verification");
 
-#[test]
-fn test_complete_buy_ckb_order_since_we_cant_buy_more() {
+        (context, tx)
+    }
+);
+
+test_contract!(test_complete_buy_ckb_order_since_we_cant_buy_more, {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(154, 8)           // 154 ckb
@@ -145,10 +126,11 @@ fn test_complete_buy_ckb_order_since_we_cant_buy_more() {
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("pass verification");
-}
 
-#[test]
-fn test_ckb_sudt_matched_order_case_0_from_deal_matcher() {
+    (context, tx)
+});
+
+test_contract!(test_ckb_sudt_matched_order_case_0_from_deal_matcher, {
     let input0 = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(1177003, 5)
@@ -186,53 +168,58 @@ fn test_ckb_sudt_matched_order_case_0_from_deal_matcher() {
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("pass verification");
-}
 
-#[test]
-fn test_ckb_sudt_two_orders_one_partial_filled_and_one_completed() {
-    let input0 = OrderInput::new_order(
-        OrderCell::builder()
+    (context, tx)
+});
+
+test_contract!(
+    test_ckb_sudt_two_orders_one_partial_filled_and_one_completed,
+    {
+        let input0 = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(2000, 8)          // 2000 ckb
         .sudt_amount_dec(50, 8)         // 50 sudt
         .order_amount_dec(150, 8)       // 150 sudt
         .price(5, 0)                    // 5
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    let input1 = OrderInput::new_order(
-        OrderCell::builder()
+        let input1 = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(800, 8)           // 800 ckb
         .sudt_amount_dec(500, 8)        // 500 sudt
         .order_amount_dec(1000, 8)      // 1000 ckb
         .price(5, 0)                    // 5
         .order_type(OrderType::BuyCKB)
         .build(),
-    );
+        );
 
-    // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
-    // output2 capacity = 800 + 750 = 1550
-    let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
-    let output1 = OrderOutput::new_order(
-        OrderCell::builder()
-            .capacity_dec(1550, 8)
-            .sudt_amount_dec(34955, 6)
-            .order_amount_dec(250, 8)
-            .price(5, 0)
-            .order_type(OrderType::BuyCKB)
-            .build(),
-    );
+        // output1 capacity = 2000 - 750 * (1 + 0.003) = 1247.75
+        // output2 capacity = 800 + 750 = 1550
+        let output0 = OrderOutput::new_sudt(SudtCell::new_with_dec(1247_75, 6, 200, 8));
+        let output1 = OrderOutput::new_order(
+            OrderCell::builder()
+                .capacity_dec(1550, 8)
+                .sudt_amount_dec(34955, 6)
+                .order_amount_dec(250, 8)
+                .price(5, 0)
+                .order_type(OrderType::BuyCKB)
+                .build(),
+        );
 
-    let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input0, input1], vec![output0, output1]);
+        let tx = context.complete_tx(tx);
 
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("pass verification");
-}
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("pass verification");
 
-#[test]
-fn test_ckb_sudt_completed_matched_order_pair() {
+        (context, tx)
+    }
+);
+
+test_contract!(test_ckb_sudt_completed_matched_order_pair, {
     let input0 = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(2000, 8)          // 2000 ckb
@@ -262,11 +249,12 @@ fn test_ckb_sudt_completed_matched_order_pair() {
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("pass verification");
-}
+
+    (context, tx)
+});
 
 // TODO: random
-#[test]
-fn test_ckb_sudt_two_completed_matched_order_pairs() {
+test_contract!(ckb_sudt_two_completed_matched_order_pairs, {
     let input0 = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(2000, 8)          // 2000 ckb
@@ -320,10 +308,11 @@ fn test_ckb_sudt_two_completed_matched_order_pairs() {
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("pass verification");
-}
 
-#[test]
-fn test_err_wrong_user_lock_hash_size() {
+    (context, tx)
+});
+
+test_contract!(test_err_wrong_user_lock_hash_size, {
     let input = {
         let cell = OrderCell::builder()
             .capacity_dec(2000, 8)
@@ -348,10 +337,11 @@ fn test_err_wrong_user_lock_hash_size() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_WRONG_USER_LOCK_HASH_SIZE, 0));
-}
 
-#[test]
-fn test_err_wrong_order_data_size() {
+    (context, tx)
+});
+
+test_contract!(test_err_wrong_order_data_size, {
     let input = OrderInput::Order {
         cell_deps:        None,
         cell:             OrderCell::new_unchecked(1000, Bytes::new()), // Error: empty data size
@@ -366,10 +356,11 @@ fn test_err_wrong_order_data_size() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_WRONG_ORDER_DATA_SIZE, 0));
-}
 
-#[test]
-fn test_err_order_price_is_zero() {
+    (context, tx)
+});
+
+test_contract!(test_err_order_price_is_zero, {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(2000, 8)
@@ -387,10 +378,11 @@ fn test_err_order_price_is_zero() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_ORDER_PRICE_IS_ZERO, 0));
-}
 
-#[test]
-fn test_err_unknown_order_type() {
+    (context, tx)
+});
+
+test_contract!(test_err_unknown_order_type, {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(2000, 8)
@@ -408,10 +400,11 @@ fn test_err_unknown_order_type() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_UNKNOWN_ORDER_TYPE, 0));
-}
 
-#[test]
-fn test_err_unexpected_version() {
+    (context, tx)
+});
+
+test_contract!(test_err_unexpected_version, {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(2000, 8)
@@ -430,10 +423,11 @@ fn test_err_unexpected_version() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_UNEXPECTED_ORDER_VERSION, 0));
-}
 
-#[test]
-fn test_err_unknown_output_lock() {
+    (context, tx)
+});
+
+test_contract!(test_err_unknown_output_lock, {
     let input = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(2000, 8)
@@ -456,10 +450,11 @@ fn test_err_unknown_output_lock() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_UNKNOWN_OUTPUT_LOCK, 0));
-}
 
-#[test]
-fn test_err_partial_filled_type_hash_changed() {
+    (context, tx)
+});
+
+test_contract!(test_err_partial_filled_type_hash_changed, {
     let input = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(800, 8)
@@ -487,10 +482,11 @@ fn test_err_partial_filled_type_hash_changed() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_OUTPUT_TYPE_HASH_CHANGED, 0));
-}
 
-#[test]
-fn test_err_partial_filled_price_changed() {
+    (context, tx)
+});
+
+test_contract!(test_err_partial_filled_price_changed, {
     let input = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(800, 8)
@@ -516,10 +512,11 @@ fn test_err_partial_filled_price_changed() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_OUTPUT_PRICE_CHANGED, 0));
-}
 
-#[test]
-fn test_err_partial_filled_order_type_changed() {
+    (context, tx)
+});
+
+test_contract!(test_err_partial_filled_order_type_changed, {
     let input = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(800, 8)
@@ -545,10 +542,11 @@ fn test_err_partial_filled_order_type_changed() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_OUTPUT_ORDER_TYPE_CHANGED, 0));
-}
 
-#[test]
-fn test_err_partial_filled_data_size_changed() {
+    (context, tx)
+});
+
+test_contract!(test_err_partial_filled_data_size_changed, {
     let input = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(800, 8)
@@ -567,10 +565,11 @@ fn test_err_partial_filled_data_size_changed() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_OUTPUT_DATA_SIZE_CHANGED, 0));
-}
 
-#[test]
-fn test_err_partial_filled_order_amount_is_zero() {
+    (context, tx)
+});
+
+test_contract!(test_err_partial_filled_order_amount_is_zero, {
     let input = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(800, 8)
@@ -596,55 +595,64 @@ fn test_err_partial_filled_order_amount_is_zero() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_ORDER_AMOUNT_IS_ZERO, 0));
-}
 
-#[test]
-fn test_err_type_hash_changed_output_from_completed_sell_ckb_order() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(50, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::SellCKB)
-            .build(),
-    );
+    (context, tx)
+});
 
-    let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
-    // Error: pass custom type args to change cell type hash
-    let type_changed_output = output.custom_type_args(Bytes::from_static(b"changed_type"));
+test_contract!(
+    test_err_type_hash_changed_output_from_completed_sell_ckb_order,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(50, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::SellCKB)
+                .build(),
+        );
 
-    let (mut context, tx) = build_test_context(vec![input], vec![type_changed_output]);
-    let tx = context.complete_tx(tx);
+        let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
+        // Error: pass custom type args to change cell type hash
+        let type_changed_output = output.custom_type_args(Bytes::from_static(b"changed_type"));
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_OUTPUT_TYPE_HASH_CHANGED, 0));
-}
+        let (mut context, tx) = build_test_context(vec![input], vec![type_changed_output]);
+        let tx = context.complete_tx(tx);
 
-#[test]
-fn test_err_not_a_sudt_cell_output_from_completed_sell_ckb_order() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(50, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::SellCKB)
-            .build(),
-    );
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_OUTPUT_TYPE_HASH_CHANGED, 0));
 
-    // Error: pass zero bytes so that output cell data size is smaller than 16
-    let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
+        (context, tx)
+    }
+);
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+test_contract!(
+    test_err_not_a_sudt_cell_output_from_completed_sell_ckb_order,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(50, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::SellCKB)
+                .build(),
+        );
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_SUDT_CELL, 0));
-}
+        // Error: pass zero bytes so that output cell data size is smaller than 16
+        let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
 
-#[test]
-fn test_err_output_burn_sudt_amount_from_sell_ckb_order() {
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
+
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_SUDT_CELL, 0));
+
+        (context, tx)
+    }
+);
+
+test_contract!(test_err_output_burn_sudt_amount_from_sell_ckb_order, {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(181, 8)           // 181 ckb
@@ -663,57 +671,66 @@ fn test_err_output_burn_sudt_amount_from_sell_ckb_order() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_OUTPUT_BURN_SUDT_AMOUNT, 0));
-}
 
-#[test]
-fn test_err_not_a_sudt_cell_output_from_completed_buy_ckb_order() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(50, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::BuyCKB)
-            .build(),
-    );
+    (context, tx)
+});
 
-    // Error: pass zero bytes so that output cell data size is smaller than 16
-    let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
+test_contract!(
+    test_err_not_a_sudt_cell_output_from_completed_buy_ckb_order,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(50, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::BuyCKB)
+                .build(),
+        );
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        // Error: pass zero bytes so that output cell data size is smaller than 16
+        let output = OrderOutput::new_sudt(SudtCell::new_unchecked(2000, Bytes::new()));
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_SUDT_CELL, 0));
-}
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-#[test]
-fn test_err_not_a_free_cell_output_from_completed_buy_ckb_order() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(50, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::BuyCKB)
-            .build(),
-    );
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_SUDT_CELL, 0));
 
-    // Error: pass somethings, so that free data size isn't 0
-    let output = OrderOutput::new_free(FreeCell::new_unchecked(
-        2000,
-        Bytes::from_static(b"some data"),
-    ));
+        (context, tx)
+    }
+);
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+test_contract!(
+    test_err_not_a_free_cell_output_from_completed_buy_ckb_order,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(50, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::BuyCKB)
+                .build(),
+        );
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_FREE_CELL, 0));
-}
+        // Error: pass somethings, so that free data size isn't 0
+        let output = OrderOutput::new_free(FreeCell::new_unchecked(
+            2000,
+            Bytes::from_static(b"some data"),
+        ));
 
-#[test]
-fn test_err_buy_ckb_order_sudt_amount_is_zero() {
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
+
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_OUTPUT_NOT_A_FREE_CELL, 0));
+
+        (context, tx)
+    }
+);
+
+test_contract!(test_err_buy_ckb_order_sudt_amount_is_zero, {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(2000, 8)
@@ -731,10 +748,11 @@ fn test_err_buy_ckb_order_sudt_amount_is_zero() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_BUY_CKB_PAY_ZERO_SUDT_AMOUNT, 0));
-}
 
-#[test]
-fn test_err_sell_ckb_output_sudt_amount_is_zero() {
+    (context, tx)
+});
+
+test_contract!(test_err_sell_ckb_output_sudt_amount_is_zero, {
     let input = OrderInput::new_order(
         OrderCell::builder()
             .capacity_dec(2000, 8)
@@ -753,232 +771,271 @@ fn test_err_sell_ckb_output_sudt_amount_is_zero() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_OUTPUT_SUDT_AMOUNT_IS_ZERO, 0));
-}
 
-#[test]
-fn test_err_sell_ckb_negative_sudt_difference_output_amount_is_smaller_than_input() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(8, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::SellCKB)
-            .build(),
-    );
+    (context, tx)
+});
 
-    // Error: output sudt amount is smaller than inputs'
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(2000, 8, 2, 8));
+test_contract!(
+    test_err_sell_ckb_negative_sudt_difference_output_amount_is_smaller_than_input,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(8, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::SellCKB)
+                .build(),
+        );
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        // Error: output sudt amount is smaller than inputs'
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(2000, 8, 2, 8));
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NEGATIVE_SUDT_DIFFERENCE, 0));
-}
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-#[test]
-fn test_err_buy_ckb_negative_sudt_difference_output_amount_is_bigger_than_input() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(8, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::BuyCKB)
-            .build(),
-    );
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_NEGATIVE_SUDT_DIFFERENCE, 0));
 
-    // Error: output sudt amount is bigger than inputs'
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(2000, 8, 10, 8));
+        (context, tx)
+    }
+);
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+test_contract!(
+    test_err_buy_ckb_negative_sudt_difference_output_amount_is_bigger_than_input,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(8, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::BuyCKB)
+                .build(),
+        );
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NEGATIVE_SUDT_DIFFERENCE, 0));
-}
+        // Error: output sudt amount is bigger than inputs'
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(2000, 8, 10, 8));
 
-#[test]
-fn test_err_buy_ckb_negative_capacity_difference_input_capacity_is_bigger_than_output() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(50, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::BuyCKB)
-            .build(),
-    );
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    // Error: input capacity is bigger than outputs
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1000, 8, 200, 8));
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_NEGATIVE_SUDT_DIFFERENCE, 0));
+        (context, tx)
+    }
+);
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+test_contract!(
+    test_err_buy_ckb_negative_capacity_difference_input_capacity_is_bigger_than_output,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(50, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::BuyCKB)
+                .build(),
+        );
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NEGATIVE_CAPACITY_DIFFERENCE, 0));
-}
+        // Error: input capacity is bigger than outputs
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1000, 8, 200, 8));
 
-#[test]
-fn test_err_sell_ckb_negative_capacity_difference_output_capacity_is_bigger_than_input() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(2000, 8)
-            .sudt_amount_dec(50, 8)
-            .order_amount_dec(150, 8)
-            .price(5, 0)
-            .order_type(OrderType::SellCKB)
-            .build(),
-    );
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    // Error: output capacity is bigger than input
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(2247_75, 6, 200, 8));
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_NEGATIVE_CAPACITY_DIFFERENCE, 0));
+        (context, tx)
+    }
+);
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+test_contract!(
+    test_err_sell_ckb_negative_capacity_difference_output_capacity_is_bigger_than_input,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
+                .capacity_dec(2000, 8)
+                .sudt_amount_dec(50, 8)
+                .order_amount_dec(150, 8)
+                .price(5, 0)
+                .order_type(OrderType::SellCKB)
+                .build(),
+        );
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_NEGATIVE_CAPACITY_DIFFERENCE, 0));
-}
+        // Error: output capacity is bigger than input
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(2247_75, 6, 200, 8));
 
-#[test]
-fn test_err_sell_ckb_price_mismatch_price_exponent_is_negative() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
+
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_NEGATIVE_CAPACITY_DIFFERENCE, 0));
+
+        (context, tx)
+    }
+);
+
+test_contract!(
+    test_err_sell_ckb_price_mismatch_price_exponent_is_negative,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(2000, 8)          // 2000 ckb
         .sudt_amount_dec(0, 0)          // 0 sudt
         .order_amount_dec(250, 8)       // 250 sudt
         .price(5, -1)                   // 0.5
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    // Error: paid 1000 ckb, bought 200 sudt
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1000, 8, 200, 8));
+        // Error: paid 1000 ckb, bought 200 sudt
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1000, 8, 200, 8));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
-}
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
 
-#[test]
-fn test_err_sell_ckb_price_mismatch_price_exponent_is_positive() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+        (context, tx)
+    }
+);
+
+test_contract!(
+    test_err_sell_ckb_price_mismatch_price_exponent_is_positive,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(2000, 8)          // 2000 ckb
         .sudt_amount_dec(0, 0)          // 0 sudt
         .order_amount_dec(250, 8)       // 250 sudt
         .price(5, 0)                    // 5
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    // Error: paid 1000 ckb, bought 100 sudt
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1000, 8, 100, 8));
+        // Error: paid 1000 ckb, bought 100 sudt
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(1000, 8, 100, 8));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
-}
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
 
-#[test]
-fn test_err_buy_ckb_price_mismatch_price_exponent_is_negative() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+        (context, tx)
+    }
+);
+
+test_contract!(
+    test_err_buy_ckb_price_mismatch_price_exponent_is_negative,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(200, 8)           // 200 ckb
         .sudt_amount_dec(2000, 8)       // 2000 sudt
         .order_amount_dec(500, 8)       // 500 ckb
         .price(5, -1)                   // 5
         .order_type(OrderType::BuyCKB)
         .build(),
-    );
+        );
 
-    // Error: paid 1000 sudt, bought 300 ckb
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(500, 8, 1000, 8));
+        // Error: paid 1000 sudt, bought 300 ckb
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(500, 8, 1000, 8));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
-}
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
 
-#[test]
-fn test_err_buy_ckb_price_mismatch_price_exponent_is_positive() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+        (context, tx)
+    }
+);
+
+test_contract!(
+    test_err_buy_ckb_price_mismatch_price_exponent_is_positive,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(200, 8)           // 200 ckb
         .sudt_amount_dec(2000, 8)       // 2000 sudt
         .order_amount_dec(500, 8)       // 500 ckb
         .price(5, 0)                    // 5
         .order_type(OrderType::BuyCKB)
         .build(),
-    );
+        );
 
-    // Error: paid 1000 sudt, bought 300 ckb
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(500, 8, 1000, 8));
+        // Error: paid 1000 sudt, bought 300 ckb
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(500, 8, 1000, 8));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
-}
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_PRICE_MISMATCH, 0));
 
-#[test]
-fn test_err_sell_ckb_order_still_matchable_price_exponent_is_negative() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+        (context, tx)
+    }
+);
+
+test_contract!(
+    test_err_sell_ckb_order_still_matchable_price_exponent_is_negative,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(555, 8)           // 555 ckb
         .sudt_amount_dec(0, 0)          // 0 sudt
         .order_amount_dec(80, 8)        // 80 sudt
         .price(50, -1)                  // 5
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
-    // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
+        // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
+        // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
-}
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
 
-#[test]
-fn test_err_sell_ckb_order_still_matchable_price_exponent_is_postive() {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
+        (context, tx)
+    }
+);
+
+test_contract!(
+    test_err_sell_ckb_order_still_matchable_price_exponent_is_postive,
+    {
+        let input = OrderInput::new_order(
+            OrderCell::builder()
         .capacity_dec(555, 8)           // 555 ckb
         .sudt_amount_dec(0, 0)          // 0 sudt
         .order_amount_dec(80, 8)        // 80 sudt
         .price(5, 0)                    // 5
         .order_type(OrderType::SellCKB)
         .build(),
-    );
+        );
 
-    // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
-    // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
+        // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
+        // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
+        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
 
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
+        let (mut context, tx) = build_test_context(vec![input], vec![output]);
+        let tx = context.complete_tx(tx);
 
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
-}
+        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+        assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
 
-#[test]
-fn test_err_buy_ckb_order_still_matchable() {
+        (context, tx)
+    }
+);
+
+test_contract!(test_err_buy_ckb_order_still_matchable, {
     let input = OrderInput::new_order(
         OrderCell::builder()
         .capacity_dec(200, 8)           // 200 ckb
@@ -997,4 +1054,6 @@ fn test_err_buy_ckb_order_still_matchable() {
 
     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
-}
+
+    (context, tx)
+});
