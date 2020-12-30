@@ -15,7 +15,6 @@ pub enum Error {
     OpenFileErr(Kind),
     ReadFileErr(Kind),
     DecodeErr(Kind),
-    LoadContract(String),
     BuildingScriptErr(String),
     MissingInputData,
     CkbErr(String),

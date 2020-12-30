@@ -14,11 +14,4 @@ args:
         short: i
         long: input
         takes_value: true
-
-    - contract:
-        help: The path of ckb contract binary.
-        short: c
-        long: contract
-        takes_value: true
-        multiple: true
         
