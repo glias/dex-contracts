@@ -34,7 +34,7 @@ jobs:
           chmod +x ./capsule/capsule
 
       - name: Build Contract
-        run: make build
+        run: ./capsule/capsule build
 
       - name: Test Contract
         run: make test
