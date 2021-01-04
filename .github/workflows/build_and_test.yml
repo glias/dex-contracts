@@ -24,6 +24,10 @@ jobs:
         with:
           args: git submodule update -r --init
 
+      - name: Install moleculec
+        run: |
+          cargo install moleculec
+
       - name: Install Capsule
         run: |
           mkdir -p ./capsule && curl -L https://github.com/nervosnetwork/capsule/releases/download/v0.4.3/capsule_v0.4.3_x86_64-linux.tar.gz | tar xvz -C ./capsule --strip-components=1
