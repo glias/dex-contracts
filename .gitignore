@@ -4,4 +4,4 @@ contracts/**/target/*
 .cache/.cargo/*
 !.gitkeep
 .tmp/
-tests/src/schema/generated/*
+tests/src/schema/generated/*.rs
