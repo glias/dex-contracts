@@ -28,9 +28,6 @@ jobs:
         run: |
           mkdir -p ./capsule && curl -L https://github.com/nervosnetwork/capsule/releases/download/v0.4.3/capsule_v0.4.3_x86_64-linux.tar.gz | tar xvz -C ./capsule --strip-components=1
           chmod +x ./capsule/capsule
-      - name: Build contracts
-        run: ./capsule/capsule build
-      
-      - name: Test contracts
-        run: ./capsule/capsule test
-  
+
+      - name: Build and Test
+        run: make test
