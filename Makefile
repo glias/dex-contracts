@@ -20,7 +20,7 @@ build:
 deps:
 	cd deps/ckb-dyn-lock && make all-via-docker
 
-test: schema all simulators
+test: schema simulators
 	cargo test -p tests
 	scripts/run_sim_tests.sh $(ENVIRONMENT)
 
