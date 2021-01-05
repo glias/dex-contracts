@@ -1,7 +1,8 @@
 use core::convert::TryInto;
 use core::result::Result;
 
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint};
+use num_traits::identities::Zero;
 
 // Import CKB syscalls and structures
 // https://nervosnetwork.github.io/ckb-std/riscv64imac-unknown-none-elf/doc/ckb_std/index.html
@@ -142,30 +143,33 @@ pub fn verify_info_type_asset_tx() -> Result<(), Error> {
         return Err(Error::InvalidInfoData);
     }
 
-    let ckb_got = info_out_data.ckb_reserve - info_in_data.ckb_reserve;
-    let sudt_got = info_out_data.sudt_reserve - info_in_data.sudt_reserve;
+    let ckb_got = BigInt::from(info_out_data.ckb_reserve) - info_in_data.ckb_reserve;
+    let sudt_got = BigInt::from(info_out_data.sudt_reserve) - info_in_data.sudt_reserve;
     let ckb_reserve = info_in_data.ckb_reserve;
     let sudt_reserve = info_in_data.sudt_reserve;
+    let zero = BigInt::zero();
 
-    if ckb_got > 0 && sudt_got == 0 {
+    if ckb_got > zero && sudt_got < zero {
         let sudt_paid = info_in_data.sudt_reserve - info_out_data.sudt_reserve;
-        if BigUint::from(ckb_got) * 998u128 * (sudt_reserve - sudt_paid)
+        if ckb_got.to_biguint().unwrap() * 998u128 * (sudt_reserve - sudt_paid)
             != BigUint::from(ckb_reserve) * sudt_paid * THOUSAND
         {
             return Err(Error::BuySUDTFailed);
         }
-    } else if ckb_got == 0 && sudt_got > 0 {
+    } else if ckb_got < zero && sudt_got > zero {
         let ckb_paid = info_in_data.ckb_reserve - info_out_data.ckb_reserve;
-        if BigUint::from(sudt_got) * 998u128 * ckb_reserve
-            != BigUint::from(ckb_paid) * (sudt_reserve * THOUSAND + 998u128 * sudt_got)
+        let tmp_sudt_got = sudt_got.to_biguint().unwrap();
+        if BigUint::from(tmp_sudt_got) * 998u128 * ckb_reserve
+            != BigUint::from(ckb_paid) * (sudt_reserve * THOUSAND + 998u128 * tmp_sudt_got)
         {
             return Err(Error::SellSUDTFailed);
         }
     }
 
-    if (pool_out_cell.capacity().unpack() as u128)
-        != (pool_in_cell.capacity().unpack() as u128) + ckb_got
-        || pool_out_data.sudt_amount != pool_in_data.sudt_amount + sudt_got
+    if BigUint::from(pool_out_cell.capacity().unpack() as u128)
+        != (pool_in_cell.capacity().unpack() as u128) + ckb_got.to_biguint().unwrap()
+        || BigUint::from(pool_out_data.sudt_amount)
+            != pool_in_data.sudt_amount + sudt_got.to_biguint().unwrap()
     {
         return Err(Error::AmountDiff);
     }

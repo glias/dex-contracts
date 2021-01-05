@@ -175,13 +175,7 @@ fn build_type_inputs(
         let type_script = ctx
             .build_script(
                 &out_point,
-                input
-                    .output
-                    .type_
-                    .clone()
-                    .unwrap()
-                    .args
-                    .into_bytes(),
+                input.output.type_.clone().unwrap().args.into_bytes(),
             )
             .ok_or_else(|| Error::BuildingScriptErr(contract_name.to_string()))?;
         if let Some(data) = input.data.as_ref() {

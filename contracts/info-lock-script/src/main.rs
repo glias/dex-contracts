@@ -45,8 +45,8 @@ fn main() -> Result<(), Error> {
         return Err(Error::InvalidInfoLock);
     }
 
-    let info = load_cell(0, Source::GroupInput)?;
-    let pool = load_cell(1, Source::GroupInput)?;
+    let info = load_cell(0, Source::Input)?;
+    let pool = load_cell(1, Source::Input)?;
     let pool_type_hash = get_cell_type_hash(&pool)?;
     let self_args = load_script()?.args();
     let hash = blake2b!("ckb", pool_type_hash.unpack());
