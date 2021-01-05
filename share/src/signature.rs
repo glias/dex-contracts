@@ -9,7 +9,7 @@ use ckb_std::{
     ckb_types::{bytes::Bytes, prelude::*},
     // debug,
     dynamic_loading::CKBDLContext,
-    high_level::{load_script, load_witness_args},
+    high_level::load_witness_args,
 };
 
 use ckb_lib_secp256k1::LibSecp256k1;
@@ -35,14 +35,7 @@ fn test_validate_blake2b_sighash_all(
     Ok(())
 }
 
-pub fn validate() -> Result<(), Error> {
-    let script = load_script()?;
-    let args: Bytes = script.args().unpack();
-
-    if args.len() != 20 {
-        return Err(Error::Encoding);
-    }
-
+pub fn check_signature(args: &Bytes, _count: usize) -> Result<(), Error> {
     let witness_args = load_witness_args(0, Source::GroupInput)?;
 
     unsafe {

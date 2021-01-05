@@ -1,0 +1,13 @@
+[package]
+name = "ckb-contract-test-engine"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+clap = { version = "3.0.0-beta.2", features = ["yaml"] }
+ckb-tool = "0.2"
+ckb-testtool = "0.2"
+ckb-system-scripts = "0.5"
+hex = "0.4"
+serde = "1.0"
+serde_json = "1.0"

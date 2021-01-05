@@ -3,10 +3,87 @@
 #![feature(alloc_error_handler)]
 #![feature(panic_info_message)]
 
-pub mod constants;
+pub use blake2b_ref;
+pub use ckb_lib_secp256k1;
+pub use ckb_std;
 
+pub mod cell;
+pub mod constants;
+pub mod error;
+pub mod hash;
 pub mod signature;
 
-pub mod hash;
+use ckb_std::{
+    ckb_types::packed::{Byte32, CellOutput},
+    error::SysError,
+};
+use error::HelperError;
 
-pub mod error;
+#[macro_export]
+macro_rules! blake2b {
+    ($($field: expr), *) => {{
+        let mut res = [0u8; 32];
+        let mut blake2b = share::hash::new_blake2b();
+
+        $( blake2b.update($field.as_ref()); )*
+
+        blake2b.finalize(&mut res);
+        res
+    }}
+}
+
+pub fn get_cell_type_hash(cell: &CellOutput) -> Result<Byte32, HelperError> {
+    let script = cell
+        .type_()
+        .to_opt()
+        .ok_or(HelperError::MissingTypeScript)?;
+    Ok(script.code_hash())
+}
+
+pub fn check_args_len(expected: usize, actual: usize) -> Result<(), SysError> {
+    if actual != expected {
+        return Err(SysError::Encoding);
+    }
+    Ok(())
+}
+
+pub fn decode_u128(data: &[u8]) -> Result<u128, SysError> {
+    if data.len() != 16 {
+        return Err(SysError::Encoding);
+    }
+
+    let mut buf = [0u8; 16];
+
+    buf.copy_from_slice(data);
+    Ok(u128::from_le_bytes(buf))
+}
+
+pub fn decode_u64(data: &[u8]) -> Result<u64, SysError> {
+    if data.len() != 8 {
+        return Err(SysError::Encoding);
+    }
+
+    let mut buf = [0u8; 8];
+    buf.copy_from_slice(data);
+    Ok(u64::from_le_bytes(buf))
+}
+
+pub fn decode_u8(data: &[u8]) -> Result<u8, SysError> {
+    if data.len() != 1 {
+        return Err(SysError::Encoding);
+    }
+
+    let mut buf = [0u8; 1];
+    buf.copy_from_slice(data);
+    Ok(u8::from_le_bytes(buf))
+}
+
+pub fn decode_i8(data: &[u8]) -> Result<i8, SysError> {
+    if data.len() != 1 {
+        return Err(SysError::Encoding);
+    }
+
+    let mut buf = [0u8; 1];
+    buf.copy_from_slice(data);
+    Ok(i8::from_le_bytes(buf))
+}

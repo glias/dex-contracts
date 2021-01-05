@@ -4,7 +4,7 @@ use core::result::Result;
 use num_bigint::BigUint;
 use num_traits::Zero;
 
-use ckb_std::{
+use share::ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
     debug,
@@ -18,7 +18,7 @@ use share::error::Error;
 
 // The dex fee rate is fixed at 0.3%
 const FEE: u128 = 3;
-const FEE_DECIMAL: u128 = 1000;
+const FEE_DECIMAL: u128 = 1_000;
 
 // The cell data length of order book is fixed at 41 bytes
 const ORDER_LEN: usize = 49;

@@ -13,5 +13,13 @@ name = "order-book-contract"
 template_type = "Rust"
 
 [[contracts]]
-name = "liquidity-poll-contract"
+name = "liquidity-lock-script"
+template_type = "Rust"
+
+[[contracts]]
+name = "info-lock-script"
+template_type = "Rust"
+
+[[contracts]]
+name = "info-type-script"
 template_type = "Rust"

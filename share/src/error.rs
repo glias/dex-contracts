@@ -2,6 +2,7 @@ use ckb_std::error::SysError;
 
 /// Error
 #[repr(i8)]
+#[derive(Debug)]
 pub enum Error {
     IndexOutOfBound = 1,
     ItemMissing,
@@ -25,6 +26,11 @@ pub enum Error {
     InvalidArgument,
     NoInputLockHashMatch = 20,
     WrongMatchInputWitness,
+    InvalidLiquidityDataLen,
+    InvalidLiquidityData,
+    InvalidEncodeNumber,
+    LiquiditySUDTTypeHashMismatch = 25,
+    PackingMixin,
 }
 
 impl From<SysError> for Error {
@@ -38,4 +44,10 @@ impl From<SysError> for Error {
             Unknown(err_code) => panic!("unexpected sys error {}", err_code),
         }
     }
+}
+
+#[repr(i8)]
+#[derive(Debug)]
+pub enum HelperError {
+    MissingTypeScript = 1,
 }

@@ -1,0 +1,17 @@
+name: ckb-contract-test-engine
+version: "0.1"
+about: A test engine to test transaction execute ckb contracts.
+
+args:
+    - transaction:
+        help: The file path of the transaction to be tested.
+        short: t
+        long: transaction
+        takes_value: true
+    
+    - input:
+        help: The file path of the input cell information.
+        short: i
+        long: input
+        takes_value: true
+        
