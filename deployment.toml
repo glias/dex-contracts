@@ -1,7 +1,7 @@
 [[cells]]
-name = "order-book-contract"
+name = "asset-order-lockscript"
 enable_type_id = true
-location = { file = "build/release/order-book-contract" }
+location = { file = "build/release/asset-order-lockscript" }
 
 # Replace with your own lock if you want to unlock deployed cells.
 # For example the secp256k1 lock

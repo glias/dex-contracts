@@ -1,13 +1,15 @@
 [package]
-name = "order-book-contract"
+name = "asset-order-lockscript"
 version = "0.1.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ckb-std = "0.7"
-ckb-lib-secp256k1 = { path = "../../ckb-lib-secp256k1" }
+# For simulator support
+ckb-std = { git = "https://github.com/nervosnetwork/ckb-std", rev = "29455b8" }
+ckb-dyn-lock = { version = "0.1", default-features = false }
+dynamic-loading = { path = "../../dynamic-loading" }
 share = { path = "../../share" }
 num-bigint = { version = "0.3", default-features = false }
 num-traits = { version = "0.2", default-features = false }
