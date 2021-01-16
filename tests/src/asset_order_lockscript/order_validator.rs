@@ -19,7 +19,7 @@ const ERR_OUTPUT_BURN_SUDT_AMOUNT: i8 = 20;
 const ERR_NEGATIVE_SUDT_DIFFERENCE: i8 = 21;
 const ERR_NEGATIVE_CAPACITY_DIFFERENCE: i8 = 22;
 const ERR_PRICE_MISMATCH: i8 = 23;
-const ERR_ORDER_STILL_MATCHABLE: i8 = 24;
+// const ERR_ORDER_STILL_MATCHABLE: i8 = 24;
 
 test_contract!(
     test_sell_ckb_complete_to_free_cell_since_we_cant_sell_even_one_ckb,
@@ -981,79 +981,79 @@ test_contract!(
     }
 );
 
-test_contract!(
-    test_err_sell_ckb_order_still_matchable_price_exponent_is_negative,
-    {
-        let input = OrderInput::new_order(
-            OrderCell::builder()
-                .capacity_dec(555, 8)           // 555 ckb
-                .sudt_amount_dec(0, 0)          // 0 sudt
-                .order_amount_dec(80, 8)        // 80 sudt
-                .price(50, -1)                  // 5
-                .order_type(OrderType::SellCKB)
-                .build(),
-        );
+// test_contract!(
+//     test_err_sell_ckb_order_still_matchable_price_exponent_is_negative,
+//     {
+//         let input = OrderInput::new_order(
+//             OrderCell::builder()
+//                 .capacity_dec(555, 8)           // 555 ckb
+//                 .sudt_amount_dec(0, 0)          // 0 sudt
+//                 .order_amount_dec(80, 8)        // 80 sudt
+//                 .price(50, -1)                  // 5
+//                 .order_type(OrderType::SellCKB)
+//                 .build(),
+//         );
+//
+//         // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
+//         // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
+//         let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
+//
+//         let (mut context, tx) = build_test_context(vec![input], vec![output]);
+//         let tx = context.complete_tx(tx);
+//
+//         let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+//         assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
+//
+//         (context, tx)
+//     }
+// );
+//
+// test_contract!(
+//     test_err_sell_ckb_order_still_matchable_price_exponent_is_postive,
+//     {
+//         let input = OrderInput::new_order(
+//             OrderCell::builder()
+//                 .capacity_dec(555, 8)           // 555 ckb
+//                 .sudt_amount_dec(0, 0)          // 0 sudt
+//                 .order_amount_dec(80, 8)        // 80 sudt
+//                 .price(5, 0)                    // 5
+//                 .order_type(OrderType::SellCKB)
+//                 .build(),
+//         );
+//
+//         // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
+//         // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
+//         let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
+//
+//         let (mut context, tx) = build_test_context(vec![input], vec![output]);
+//         let tx = context.complete_tx(tx);
+//
+//         let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+//         assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
+//
+//         (context, tx)
+//     }
+// );
 
-        // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
-        // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
-        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
-
-        let (mut context, tx) = build_test_context(vec![input], vec![output]);
-        let tx = context.complete_tx(tx);
-
-        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-        assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
-
-        (context, tx)
-    }
-);
-
-test_contract!(
-    test_err_sell_ckb_order_still_matchable_price_exponent_is_postive,
-    {
-        let input = OrderInput::new_order(
-            OrderCell::builder()
-                .capacity_dec(555, 8)           // 555 ckb
-                .sudt_amount_dec(0, 0)          // 0 sudt
-                .order_amount_dec(80, 8)        // 80 sudt
-                .price(5, 0)                    // 5
-                .order_type(OrderType::SellCKB)
-                .build(),
-        );
-
-        // Sold 400 ckb, got 79.76 sudt, remain 0.24 sudt.
-        // Error: we can still sell 1_00_000_000 shannons to buy  20_000_000 sudt.
-        let output = OrderOutput::new_sudt(SudtCell::new_with_dec(155, 8, 79_76, 6));
-
-        let (mut context, tx) = build_test_context(vec![input], vec![output]);
-        let tx = context.complete_tx(tx);
-
-        let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-        assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
-
-        (context, tx)
-    }
-);
-
-test_contract!(test_err_buy_ckb_order_still_matchable, {
-    let input = OrderInput::new_order(
-        OrderCell::builder()
-            .capacity_dec(200, 8)           // 200 ckb
-            .sudt_amount_dec(200, 8)        // 200 sudt
-            .order_amount_dec(100, 8)       // 100 ckb
-            .price(5, -1)                   // 0.5
-            .order_type(OrderType::BuyCKB)
-            .build(),
-    );
-
-    // Error: paid 100 sudt, bought 49.85 ckb, we can paid 100 sudt to bought 49.85 ckb
-    let output = OrderOutput::new_sudt(SudtCell::new_with_dec(249_85, 6, 100, 8));
-
-    let (mut context, tx) = build_test_context(vec![input], vec![output]);
-    let tx = context.complete_tx(tx);
-
-    let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
-    assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
-
-    (context, tx)
-});
+// test_contract!(test_err_buy_ckb_order_still_matchable, {
+//     let input = OrderInput::new_order(
+//         OrderCell::builder()
+//             .capacity_dec(200, 8)           // 200 ckb
+//             .sudt_amount_dec(200, 8)        // 200 sudt
+//             .order_amount_dec(100, 8)       // 100 ckb
+//             .price(5, -1)                   // 0.5
+//             .order_type(OrderType::BuyCKB)
+//             .build(),
+//     );
+//
+//     // Error: paid 100 sudt, bought 49.85 ckb, we can paid 100 sudt to bought 49.85 ckb
+//     let output = OrderOutput::new_sudt(SudtCell::new_with_dec(249_85, 6, 100, 8));
+//
+//     let (mut context, tx) = build_test_context(vec![input], vec![output]);
+//     let tx = context.complete_tx(tx);
+//
+//     let err = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
+//     assert_error_eq!(err, tx_error(ERR_ORDER_STILL_MATCHABLE, 0));
+//
+//     (context, tx)
+// });

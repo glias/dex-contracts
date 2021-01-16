@@ -26,12 +26,6 @@ const ORDER_DATA_LEN: usize = 43;
 const PRICE_BYTES_LEN: usize = 9;
 const VERSION: u8 = 1;
 
-// capacity: 8 bytes
-// data: 16 bytes
-// type: 65 bytes
-// lock: 65 bytes
-const SUDT_CELL_SIZE: u64 = 154_00_000_000; // shannons, 154 ckb
-
 pub fn validate() -> Result<(), Error> {
     // Find inputs in current group
     let orders = QueryIter::new(load_input, Source::GroupInput).collect::<Vec<_>>();
@@ -152,6 +146,13 @@ fn validate_order_cells(index: usize) -> Result<(), Error> {
     }
 }
 
+// For this demo, always allow deal maker to claim tokens for user.
+// FIXME: We should calculate token amount to make sure that deal maker can only claim tokens when
+// this order cannot be matched base on its price anymore. There are some edge cases.
+fn claimable() -> bool {
+    true
+}
+
 fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Result<(), Error> {
     if output.capacity > input.capacity {
         return Err(Error::NegativeCapacityDifference);
@@ -193,22 +194,8 @@ fn validate_sell_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resu
     }
 
     let remained = order.order_amount - sudt_got;
-    if completed && remained >= 1 {
-        let sellable_ckb = BigUint::from(output.capacity - SUDT_CELL_SIZE);
-
-        // Verify that we cannot sell more ckb to buy at least 1 sudt(smallest decimal)
-        // PE as price effect
-        // Pe as price exponent
-        // Require (sellable_ckb * 997 / 1000) * Pe /PE < 1
-        if order.price.is_exponent_negative() {
-            if sellable_ckb * (FEE_DECIMAL - FEE) * price_exponent >= FEE_DECIMAL * price_effect {
-                return Err(Error::OrderStillMatchable);
-            }
-        // Require (sellable_ckb * 997 / 1000) / (Pe * PE) < 1
-        } else if sellable_ckb * (FEE_DECIMAL - FEE) >= FEE_DECIMAL * price_effect * price_exponent
-        {
-            return Err(Error::OrderStillMatchable);
-        }
+    if completed && remained >= 1 && !claimable() {
+        return Err(Error::OrderStillMatchable);
     }
 
     Ok(())
@@ -258,18 +245,8 @@ fn validate_buy_ckb_price(input: &Cell, output: &Cell, completed: bool) -> Resul
     }
 
     let remained = order.order_amount - u128::from(ckb_bought);
-    if completed && remained >= 1 {
-        // Verify that we can't buy even 1 ckb shannon
-        let sellable_sudt = BigUint::from(output_sudt_amount);
-
-        // PE as price effect
-        // Pe as price exponent
-        // Require (sellable_sudt * 997 / 1000) * PE / Pe < 1
-        if order.price.is_exponent_negative()
-            && sellable_sudt * (FEE_DECIMAL - FEE) * price_effect >= price_exponent * FEE_DECIMAL
-        {
-            return Err(Error::OrderStillMatchable);
-        }
+    if completed && remained >= 1 && !claimable() {
+        return Err(Error::OrderStillMatchable);
     }
 
     Ok(())
